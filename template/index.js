@@ -97,6 +97,9 @@ function onReceiveData(data) {
         }
     }
 
+    if (data.type == 'bidding') {
+        var xPos = 100;
+    }
     if (data.type == 'cardData') {
         var xPos = 100;
         

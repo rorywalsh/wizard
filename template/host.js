@@ -88,6 +88,10 @@ function onClientConnect(data) {
     players.push({ id: data.id, number: players.length, currentDealer: false })
     print(players.length);
 
+    if(players.length == numberOfPlayers){
+        sendData('firstBid', {player:1});
+    }
+
 }
 
 var numMousePresses = 0;

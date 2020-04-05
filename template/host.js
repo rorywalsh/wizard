@@ -22,14 +22,21 @@ const local = true; // true if running locally, false
 
 var players = [];
 let deck;
+let plusPlayers, minusPlayers;
+let numberOfPlayers = 0;
+let createLink;
+let linkCreated = false;
 
 function preload() {
     setupHost();
 }
 
+
 function setup() {
     createCanvas(windowWidth, windowHeight);
-
+    plusPlayers = new Button(100, 100, 100, 100, '+', 'red');
+    minusPlayers = new Button(200, 100, 100, 100, '-', 'red');
+    createLink = new Button(500, 100, 200, 100, 'Generate Game Link', 'green');
 
 }
 
@@ -39,6 +46,27 @@ function windowResized() {
 
 function draw() {
     background(15);
+    textSize(32);
+    textAlign(CENTER);
+    fill(255);
+    text("Number of players: "+numberOfPlayers.toString(), 200, 250);
+    if(linkCreated)
+        text(serverIp+"/?="+roomId, 600,  250);
+
+    textSize(50);
+    fill('blue');
+    //rect(360, 180, 200, 100);
+    fill(255);
+    if(players.length>0){
+        text("Game Status: "+ (players.length == numberOfPlayers ? "In Progress" : "Initiliasing"), 400, 400);
+    }
+    else    
+        text("Game Status: Unknown", 400, 400);
+    
+
+    plusPlayers.display();
+    minusPlayers.display();
+    createLink.display();
 
     if (isHostConnected(display = true)) {
         // Host/Game draw here. --->
@@ -47,8 +75,11 @@ function draw() {
         // <----
 
         // Display server address
-        displayAddress();
+      // displayAddress();
     }
+
+    
+
 }
 
 function onClientConnect(data) {
@@ -63,6 +94,17 @@ var numMousePresses = 0;
 
 function mousePressed() {
 
+    if(plusPlayers.hitTest() == true){
+        numberOfPlayers++;
+    }
+
+    if(minusPlayers.hitTest() == true){
+        numberOfPlayers = (numberOfPlayers>0 ? numberOfPlayers-1 : 0);
+    }
+
+    if(createLink.hitTest() == true){
+        linkCreated = true;
+    }
     if (players.length > 0) {
         if (numMousePresses == 0) {
             sendData('playerData', { players });
@@ -72,6 +114,8 @@ function mousePressed() {
             sendData('cardData', { deck });
         }
 
+        
+    
         numMousePresses++;
 
 

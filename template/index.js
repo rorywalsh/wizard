@@ -23,14 +23,19 @@ const local = true; // true if running locally, false
 
 let playerDetails;
 let currentCards = [];
+let plusButton, minusButton, bidButton;
+let bidValue  = 0;
+let cardsInRound = 0;
 
 function preload() {
     setupClient();
+    noLoop();
+    setInterval(draw, .1);
 }
 
 function setup() {
     createCanvas(windowWidth, windowHeight);
-
+    
     // Client setup here. ---->
 
     // <----
@@ -52,8 +57,11 @@ function windowResized() {
     resizeCanvas(windowWidth, windowHeight);
 }
 
+
 function draw() {
+    // print("Drawing");
     background(0);
+
     fill(255);
     textSize(20);
     text(id, 40, 40);
@@ -62,6 +70,14 @@ function draw() {
         card.display();
     }
 
+    if(plusButton)
+        plusButton.display();
+    if(minusButton)
+        minusButton.display();
+    if(bidButton)
+        bidButton.display();
+
+    
     if (isClientConnected(display = true)) {
 
     }
@@ -83,12 +99,14 @@ function onReceiveData(data) {
 
     if (data.type == 'cardData') {
         var xPos = 100;
+        
         print("numberOfHands:", data.deck.hands.length + 1);
         //print(data.deck.hands);
         for (var i = 0; i <= data.deck.hands.length + 1; i++) {
             for (player of data.deck.hands) {
                 if (playerDetails.number == i) {
                     for (card of player[i]) {
+                        cardsInRound++;
                         print(card);
                         currentCards.push(new Card(xPos + 10, 100, 100, 200, card.suit, card.number));
                         xPos += 110;
@@ -97,19 +115,30 @@ function onReceiveData(data) {
             }
         }
 
-        currentCards.push(new Card(120, 400, 300, 400, data.deck.trump.suit, "Trump"));
+        plusButton = new Button(400, 400, 100, 100, '+', data.deck.trump.suit);
+        minusButton = new Button(500, 400, 100, 100, '-', data.deck.trump.suit);
+        bidButton = new Button(400, 500, 200, 100, 'Bid:0', data.deck.trump.suit);
+        currentCards.push(new Card(120, 400, 200, 400, data.deck.trump.suit, "Trump"));
 
     }
 }
 
 function mousePressed() {
-    draw();
     for (card of currentCards) {
         if (card.hitTest()) {
             print(card.number);
             sendData('cardPlayed', { id: playerDetails.id, playerNumber: playerDetails.number, suit: card.suit, number: card.number });
         }
     }
+ 
+    if(plusButton.hitTest() == true){
+        bidValue = (bidValue < cardsInRound ? bidValue+1 : cardsInRound);
+            bidButton.text = "Bid:"+bidValue.toString();
+    }
+    if(minusButton.hitTest() == true){
+        bidValue = (bidValue>0 ? bidValue-1 : 0);
+        bidButton.text = "Bid:"+bidValue.toString();
+}
 }
 
 /// Add these lines below sketch to prevent scrolling on mobile

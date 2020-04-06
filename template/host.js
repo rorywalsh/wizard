@@ -137,7 +137,7 @@ function onClientDisconnect(data) {}
 
 function onReceiveData(data) {
     // Input data processing here. --->
-    console.log(data);
+
     if (data.type == "gameState") {
         gameState = data;
 
@@ -157,7 +157,9 @@ function onReceiveData(data) {
         //game is in progress...
         else if (gameState.state == 'playing') {
             print("CurrentPlayer ", gameState.playerToPlay);
-            gameState.playerToPlay++; //(gameState.playerToPlay < gameState.players.length ? gameState.playerToPlay + 1 : 0);
+            gameState.playerToPlay = (gameState.playerToPlay < gameState.players.length - 1 ? gameState.playerToPlay + 1 : 0);
+            print("=============");
+            console.log(gameState.playerToPlay);
             if (gameState.cardsPlayedInCurrentHand == gameState.players.length) {
                 alert("round finished");
             }

@@ -1,18 +1,3 @@
-/*
-p5.multiplayer - CLIENT
-
-This 'client' sketch is intended to be run in either mobile or 
-desktop browsers. It sends a basic joystick and button input data 
-to a node server via socket.io. This data is then rerouted to a 
-'host' sketch, which displays all connected 'clients'.
-
-Navigate to the project's 'public' directory.
-Run http-server -c-1 to start server. This will default to port 8080.
-Run http-server -c-1 -p80 to start server on open port 80.
-
-*/
-
-////////////
 // Network Settings
 // const serverIp      = 'https://yourservername.herokuapp.com';
 // const serverIp      = 'https://yourprojectname.glitch.me';
@@ -50,9 +35,9 @@ function draw() {
     // print("Drawing");
     background(0);
 
-    fill(255);
-    textSize(20);
-    text(id, 40, 40);
+    //fill(255);
+    //textSize(20);
+    //text(id, 40, 40);
 
     for (card of currentCards) {
         card.display();
@@ -94,7 +79,10 @@ function drawMessageText(x, y, message) {
     text(message, x, y);
 }
 
-// Messages can be sent from a host to all connected clients
+////////////////////////////////////////
+// onReceiveData
+// NOTE TO SELF: This is triggered for every instance of this script when the host outputs something....
+////////////////////////////////////////
 function onReceiveData(incomingGameState) {
     // Input data processing here. --->
     console.log(incomingGameState);
@@ -102,9 +90,9 @@ function onReceiveData(incomingGameState) {
     if (incomingGameState.type == "gameState") {
         gameState = incomingGameState;
 
-        numberOfPlayers = incomingGameState.players.length;
+        numberOfPlayers = gameState.players.length;
         if (firstTimeConnection) {
-            for (player of incomingGameState.players) {
+            for (player of gameState.players) {
                 if (player.id == id) {
                     playerDetails = { id: id, number: player.number };
                     print("PlayerDetails:", playerDetails);
@@ -113,21 +101,21 @@ function onReceiveData(incomingGameState) {
             firstTimeConnection = false;
         }
 
-        if (playerDetails.number == incomingGameState.currentBidder && incomingGameState.state == 'bidding') {
+        if (playerDetails.number == gameState.currentBidder && gameState.state == 'bidding') {
             displayBiddingText = true;
         }
 
-        if (playerDetails.number == incomingGameState.playerToPlay && incomingGameState.state == 'playing') {
+        if (playerDetails.number == gameState.playerToPlay && gameState.state == 'playing') {
             displayYourTurnText = true;
         }
 
         var xPos = 100;
 
-        if (incomingGameState.cardData) {
-            print("numberOfHands:", incomingGameState.cardData.hands.length + 1);
+        if (gameState.cardData) {
+            print("numberOfHands:", gameState.cardData.hands.length + 1);
             //print(data.deck.hands);
-            for (var i = 0; i <= incomingGameState.cardData.hands.length + 1; i++) {
-                for (player of incomingGameState.cardData.hands) {
+            for (var i = 0; i <= gameState.cardData.hands.length + 1; i++) {
+                for (player of gameState.cardData.hands) {
                     if (playerDetails.number == i) {
                         for (card of player[i]) {
                             cardsInRound++;
@@ -148,26 +136,39 @@ function onReceiveData(incomingGameState) {
                 }
             }
 
-            plusButton = new Button(400, 400, 100, 100, "+", incomingGameState.cardData.trump.suit);
-            minusButton = new Button(500, 400, 100, 100, "-", incomingGameState.cardData.trump.suit);
+            plusButton = new Button(400, 400, 100, 100, "+", gameState.cardData.trump.suit);
+            minusButton = new Button(500, 400, 100, 100, "-", gameState.cardData.trump.suit);
             bidButton = new Button(
                 400,
                 500,
                 200,
                 100,
                 "Bid:0",
-                incomingGameState.cardData.trump.suit
+                gameState.cardData.trump.suit
             );
             currentCards.push(
-                new Card(120, 400, 200, 400, incomingGameState.cardData.trump.suit, "Trump")
+                new Card(120, 400, 200, 400, gameState.cardData.trump.suit, "Trump")
             );
         }
+
+        if (gameState.cardsPlayed) {
+            var xPos = 0;
+            for (cardPlayed of gameState.cardsPlayed) {
+                currentCards.push(new Card(10 + xPos * 110, 50, 100, 200, cardPlayed.suit, cardPlayed.number, "[P " + cardPlayed.player + "]"));
+                xPos++;
+            }
+        }
+
     }
 }
 
+
+/////////////////////
+// mousePressed
+/////////////////////
 function mousePressed() {
+    var tempCard, wasHit = false;
     if (playerDetails.number == gameState.playerToPlay && gameState.state == 'playing') {
-        var cardTmp, wasHit = false;
         for (card of currentCards) {
             if (card.hitTest()) {
                 wasHit = true;
@@ -175,8 +176,8 @@ function mousePressed() {
                     print(player.id, id);
                     if (player.id == id) {
                         player.currentCard = card;
-                        cardTmp = card;
-                        sendData("gameState", gameState);
+                        tempCard = card;
+
                     }
                 }
 
@@ -184,10 +185,13 @@ function mousePressed() {
         }
 
         if (wasHit) {
-            gameState.cardsPlayedInCurrentHand++;
-            currentCards.push(new Card(10 + gameState.cardsPlayedInCurrentHand * 110, 50, 100, 200, cardTmp.suit, cardTmp.number));
-            gameState.cardsPlayed.push({ player: playerDetails.number, tmpCard });
+
+            // currentCards.push(new Card(10 + gameState.cardsPlayedInCurrentHand * 110, 50, 100, 200, tempCard.suit, tempCard.number, "[P " + playerDetails.number + "]"));
+            gameState.cardsPlayed.push({ player: playerDetails.number, suit: tempCard.suit, number: tempCard.number });
+
             displayYourTurnText = false;
+            sendData("gameState", gameState);
+            gameState.cardsPlayedInCurrentHand++;
         }
 
     }

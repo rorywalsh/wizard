@@ -15,12 +15,11 @@ Run http-server -c-1 -p80 to start server on open port 80.
 // Network Settings
 // const serverIp      = 'https://yourservername.herokuapp.com';
 // const serverIp      = 'https://yourprojectname.glitch.me';
-const serverIp = '127.0.0.1';
-const serverPort = '3000';
+const serverIp = "127.0.0.1";
+const serverPort = "3000";
 const local = true; // true if running locally, false
 // if running on remote server
 
-var players = [];
 let deck;
 let plusPlayers, minusPlayers;
 let numberOfPlayers = 0;
@@ -28,17 +27,30 @@ let createLink;
 let linkCreated = false;
 let currentBidder = 0;
 
+let gameState;
+
 function preload() {
     setupHost();
 }
 
-
 function setup() {
     createCanvas(windowWidth, windowHeight);
-    plusPlayers = new Button(100, 100, 100, 100, '+', 'red');
-    minusPlayers = new Button(200, 100, 100, 100, '-', 'red');
-    createLink = new Button(500, 100, 200, 100, 'Generate Game Link', 'green');
+    plusPlayers = new Button(100, 100, 100, 100, "+", "red");
+    minusPlayers = new Button(200, 100, 100, 100, "-", "red");
+    createLink = new Button(500, 100, 200, 100, "Generate Game Link", "green");
 
+    gameState = {
+        players: [],
+        score: null,
+        cardData: null,
+        dealer: 0,
+        currentBidder: 0,
+        playerToPlay: 0,
+        cardsPlayedInCurrentHand: 0,
+        handsPlayed: 0,
+        cardsPlayed: [],
+        state: 'dealing'
+    };
 }
 
 function windowResized() {
@@ -51,133 +63,109 @@ function draw() {
     textAlign(CENTER);
     fill(255);
     text("Number of players: " + numberOfPlayers.toString(), 200, 250);
-    if (linkCreated)
-        text(serverIp + "/?=" + roomId, 600, 250);
+    if (linkCreated) text(serverIp + "/?=" + roomId, 600, 250);
 
     textSize(50);
-    fill('blue');
-    //rect(360, 180, 200, 100);
+    fill("blue");
     fill(255);
-    if (players.length > 0) {
-        text("Game Status: " + (players.length == numberOfPlayers ? "In Progress" : "Initiliasing"), 400, 400);
-    } else
-        text("Game Status: Unknown", 400, 400);
-
+    if (gameState.players.length > 0) {
+        text(
+            "Game Status: " +
+            (gameState.players.length == numberOfPlayers ?
+                "In Progress" :
+                "Initiliasing"),
+            400,
+            400
+        );
+    } else text("Game Status: Unknown", 400, 400);
 
     plusPlayers.display();
     minusPlayers.display();
     createLink.display();
 
-    if (isHostConnected(display = true)) {
-        // Host/Game draw here. --->
-
-
-        // <----
-
-        // Display server address
-        // displayAddress();
-    }
-
-
-
+    if (isHostConnected((display = true))) {}
 }
 
 function onClientConnect(data) {
+    console.log(data.id + " has connected.");
 
-    console.log(data.id + ' has connected.');
-    players.push({ id: data.id, number: players.length, currentDealer: false, bid: 0, turn: false })
-    print(players.length);
-    print(numberOfPlayers);
-    if (players.length == numberOfPlayers) {
-        sendData('playerData', { players });
+    gameState.players.push({
+        id: data.id,
+        number: gameState.players.length,
+        bid: -1,
+        turn: false,
+        handsWon: 0,
+        score: 0,
+        currentCard: { suit: '', value: -1 }
+
+    });
+
+    if (gameState.players.length == numberOfPlayers) {
         deck = new Cards();
-        deck.deal(11, players.length);
-        sendData('cardData', { deck });
-        sendData('bidding', { number: currentBidder });
+        deck.deal(11, gameState.players.length);
+        gameState.cardData = deck;
+        gameState.currentBidder = currentBidder;
         currentBidder++;
-
+        gameState.state = 'bidding';
+        sendData("gameState", gameState);
+        print(gameState);
     }
-
 }
 
 var numMousePresses = 0;
 
 function mousePressed() {
-
     if (plusPlayers.hitTest() == true) {
         numberOfPlayers++;
     }
 
     if (minusPlayers.hitTest() == true) {
-        numberOfPlayers = (numberOfPlayers > 0 ? numberOfPlayers - 1 : 0);
+        numberOfPlayers = numberOfPlayers > 0 ? numberOfPlayers - 1 : 0;
     }
 
     if (createLink.hitTest() == true) {
         linkCreated = true;
     }
-    if (players.length > 0) {
-        if (numMousePresses == 0) {
-
-        } else if (numMousePresses == 1) {
-
-        }
-
-
+    if (gameState.players.length > 0) {
+        if (numMousePresses == 0) {} else if (numMousePresses == 1) {}
 
         numMousePresses++;
-
-
-
     }
-
-
 }
 
-
-function onClientDisconnect(data) {
-    // Client disconnect logic here. --->
-    //console.log(data.id + ' has disconnected.');
-
-    // <----
-}
+function onClientDisconnect(data) {}
 
 function onReceiveData(data) {
     // Input data processing here. --->
     console.log(data);
-    if (data.type == 'cardPlayed') {
-        for (player of players) {
-            if (player.id == data.id) {
-                print("Player:", player.number, "just played a", data.number, "of ", data.suit.toString('rgba%'));
+    if (data.type == "gameState") {
+        gameState = data;
+
+        //game is still in bidding process
+        if (gameState.state == 'bidding') {
+            gameState.currentBidder = currentBidder;
+
+            //check bidding has finished
+            if (currentBidder == gameState.players.length) {
+                gameState.playerToPlay = gameState.dealer + 1;
+                gameState.state = 'playing';
+                currentBidder = -10;
+                gameState.dealer++;
             }
+            currentBidder++;
         }
-    }
-
-    if (data.type == "incomingBid") {
-        for (player of players) {
-            if (player.number == data.playerNumber) {
-                player.bid = data.bid;
+        //game is in progress...
+        else if (gameState.state == 'playing') {
+            print("CurrentPlayer ", gameState.playerToPlay);
+            gameState.playerToPlay++; //(gameState.playerToPlay < gameState.players.length ? gameState.playerToPlay + 1 : 0);
+            if (gameState.cardsPlayedInCurrentHand == gameState.players.length) {
+                alert("round finished");
             }
+
         }
 
-        sendData('playerData', { players });
-        sendData('bidding', { number: currentBidder });
-        // print("currentBidder", currentBidder);
-        // print("numberOfPlayer", numberOfPlayers);
-        if (currentBidder == numberOfPlayers) {
-            print("Bidding has completed for this round");
-        }
-        currentBidder++;
 
+        sendData("gameState", gameState);
+        print(gameState);
     }
-
-    // <---
-
-    /* Example:
-       if (data.type === 'myDataType') {
-         processMyData(data);
-       }
-
-       Use `data.type` to get the message type sent by client.
-    */
-
 }

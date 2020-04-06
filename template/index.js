@@ -16,8 +16,8 @@ Run http-server -c-1 -p80 to start server on open port 80.
 // Network Settings
 // const serverIp      = 'https://yourservername.herokuapp.com';
 // const serverIp      = 'https://yourprojectname.glitch.me';
-const serverIp = '127.0.0.1';
-const serverPort = '3000';
+const serverIp = "127.0.0.1";
+const serverPort = "3000";
 const local = true; // true if running locally, false
 // if running on remote server
 
@@ -27,13 +27,15 @@ let plusButton, minusButton, bidButton;
 let bidValue = 0;
 let cardsInRound = 0;
 let displayBiddingText = false;
+let displayYourTurnText = false;
 let numberOfPlayers = 0;
-let playerData;
+let gameState;
+let firstTimeConnection = true;
 
 function preload() {
     setupClient();
     noLoop();
-    setInterval(draw, .1);
+    setInterval(draw, 0.1);
 }
 
 function setup() {
@@ -56,104 +58,163 @@ function draw() {
         card.display();
     }
 
-    if (plusButton)
-        plusButton.display();
-    if (minusButton)
-        minusButton.display();
-    if (bidButton)
-        bidButton.display();
+    if (plusButton) plusButton.display();
+    if (minusButton) minusButton.display();
+    if (bidButton) bidButton.display();
 
-    if (displayBiddingText) {
+    if (displayBiddingText)
+        drawMessageText(600, 650, "Please make a bid..");
+
+    if (displayYourTurnText)
+        drawMessageText(700, 650, "Please select a card to play.");
+
+
+
+
+    if (gameState) {
         fill(255);
         textSize(52);
         textAlign(CENTER);
-        text("Please make a bid", 600, 700);
-    }
-
-    if (playerData) {
-        fill(255);
-        textSize(52);
-        textAlign(CENTER);
-        for (var i = 0; i < playerData.length; i++) {
-            text("Player" + playerData[i].number + " Bid:" + playerData[i].bid, 1000, 400 + 60 * i);
+        for (var i = 0; i < gameState.players.length; i++) {
+            text(
+                "[Player " + gameState.players[i].number + "] [Bid:" + (gameState.players[i].bid > -1 ? gameState.players[i].bid : '-') + "] [Hands Won:" + gameState.players[i].handsWon + "] [Score:" + gameState.players[i].score + ']',
+                1300,
+                400 + 60 * i
+            );
         }
     }
 
+    if (isClientConnected((display = true))) {}
+}
 
-    if (isClientConnected(display = true)) {
-
-    }
+function drawMessageText(x, y, message) {
+    fill(255);
+    textSize(52);
+    textAlign(CENTER);
+    text(message, x, y);
 }
 
 // Messages can be sent from a host to all connected clients
-function onReceiveData(data) {
+function onReceiveData(incomingGameState) {
     // Input data processing here. --->
-    console.log(data);
+    console.log(incomingGameState);
 
-    if (data.type == 'playerData') {
-        playerData = data.players;
-        numberOfPlayers = data.players.length;
-        for (player of data.players) {
+    if (incomingGameState.type == "gameState") {
+        gameState = incomingGameState;
 
-            if (player.id == id) {
-                playerDetails = { id: id, number: player.number };
-                print(playerDetails);
+        numberOfPlayers = incomingGameState.players.length;
+        if (firstTimeConnection) {
+            for (player of incomingGameState.players) {
+                if (player.id == id) {
+                    playerDetails = { id: id, number: player.number };
+                    print("PlayerDetails:", playerDetails);
+                }
             }
+            firstTimeConnection = false;
         }
-    }
 
-    if (data.type == 'bidding') {
-        if (playerDetails.number == data.number) {
+        if (playerDetails.number == incomingGameState.currentBidder && incomingGameState.state == 'bidding') {
             displayBiddingText = true;
         }
-    }
-    if (data.type == 'cardData') {
+
+        if (playerDetails.number == incomingGameState.playerToPlay && incomingGameState.state == 'playing') {
+            displayYourTurnText = true;
+        }
+
         var xPos = 100;
 
-        print("numberOfHands:", data.deck.hands.length + 1);
-        //print(data.deck.hands);
-        for (var i = 0; i <= data.deck.hands.length + 1; i++) {
-            for (player of data.deck.hands) {
-                if (playerDetails.number == i) {
-                    for (card of player[i]) {
-                        cardsInRound++;
-                        print(card);
-                        currentCards.push(new Card(xPos + 10, 100, 100, 200, card.suit, card.number));
-                        xPos += 110;
+        if (incomingGameState.cardData) {
+            print("numberOfHands:", incomingGameState.cardData.hands.length + 1);
+            //print(data.deck.hands);
+            for (var i = 0; i <= incomingGameState.cardData.hands.length + 1; i++) {
+                for (player of incomingGameState.cardData.hands) {
+                    if (playerDetails.number == i) {
+                        for (card of player[i]) {
+                            cardsInRound++;
+                            print(card);
+                            currentCards.push(
+                                new Card(
+                                    xPos + 300,
+                                    700,
+                                    100,
+                                    200,
+                                    card.suit,
+                                    card.number
+                                )
+                            );
+                            xPos += 110;
+                        }
                     }
                 }
             }
+
+            plusButton = new Button(400, 400, 100, 100, "+", incomingGameState.cardData.trump.suit);
+            minusButton = new Button(500, 400, 100, 100, "-", incomingGameState.cardData.trump.suit);
+            bidButton = new Button(
+                400,
+                500,
+                200,
+                100,
+                "Bid:0",
+                incomingGameState.cardData.trump.suit
+            );
+            currentCards.push(
+                new Card(120, 400, 200, 400, incomingGameState.cardData.trump.suit, "Trump")
+            );
         }
-
-        plusButton = new Button(400, 400, 100, 100, '+', data.deck.trump.suit);
-        minusButton = new Button(500, 400, 100, 100, '-', data.deck.trump.suit);
-        bidButton = new Button(400, 500, 200, 100, 'Bid:0', data.deck.trump.suit);
-        currentCards.push(new Card(120, 400, 200, 400, data.deck.trump.suit, "Trump"));
-
     }
 }
 
 function mousePressed() {
-    for (card of currentCards) {
-        if (card.hitTest()) {
-            print(card.number);
-            sendData('cardPlayed', { id: playerDetails.id, playerNumber: playerDetails.number, suit: card.suit, number: card.number });
+    if (playerDetails.number == gameState.playerToPlay && gameState.state == 'playing') {
+        var cardTmp, wasHit = false;
+        for (card of currentCards) {
+            if (card.hitTest()) {
+                wasHit = true;
+                for (player of gameState.players) {
+                    print(player.id, id);
+                    if (player.id == id) {
+                        player.currentCard = card;
+                        cardTmp = card;
+                        sendData("gameState", gameState);
+                    }
+                }
+
+            }
         }
+
+        if (wasHit) {
+            gameState.cardsPlayedInCurrentHand++;
+            currentCards.push(new Card(10 + gameState.cardsPlayedInCurrentHand * 110, 50, 100, 200, cardTmp.suit, cardTmp.number));
+            gameState.cardsPlayed.push({ player: playerDetails.number, tmpCard });
+            displayYourTurnText = false;
+        }
+
     }
 
     if (plusButton.hitTest() == true) {
-        bidValue = (bidValue < cardsInRound ? bidValue + 1 : cardsInRound);
+        bidValue = bidValue < cardsInRound ? bidValue + 1 : cardsInRound;
         bidButton.text = "Bid:" + bidValue.toString();
     }
     if (minusButton.hitTest() == true) {
-        bidValue = (bidValue > 0 ? bidValue - 1 : 0);
+        bidValue = bidValue > 0 ? bidValue - 1 : 0;
         bidButton.text = "Bid:" + bidValue.toString();
     }
-    if (bidButton.hitTest() == true) {
-        displayBiddingText = false;
-        sendData("incomingBid", { playerNumber: playerDetails.number, bid: bidValue });
+    if (playerDetails.number == gameState.currentBidder) {
+        if (bidButton.hitTest() == true) {
+            displayBiddingText = false;
+            for (player of gameState.players) {
+                if (player.id == id) {
+                    player.bid = bidValue;
+                }
+            }
+            print(gameState);
+
+            sendData("gameState", gameState);
+        }
     }
 }
+
 
 /// Add these lines below sketch to prevent scrolling on mobile
 function touchMoved() {

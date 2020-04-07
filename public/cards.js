@@ -2,16 +2,17 @@ class Cards {
     constructor() {
         this.cards = [];
         this.hands = [];
+
         this.trump = ';'
         this.suits = ['red', 'blue', 'green', 'yellow'];
         for (var i = 0; i < 13; i++) {
             for (var suit = 0; suit < 4; suit++) {
-                this.cards.push({ suit: this.suits[suit], number: i });
+                this.cards.push({ suit: this.suits[suit], number: i, display: true });
             }
         }
 
         for (var suit = 0; suit < 4; suit++) {
-            this.cards.push({ suit: this.suits[suit], number: 'w' });
+            this.cards.push({ suit: this.suits[suit], number: 'w', display: true });
         }
 
         // for (var i = 0; i < this.cards.length; i++)
@@ -40,8 +41,6 @@ class Cards {
 
         } else
             print("Not enough cards remaining for a deal");
-
-
     }
 
 

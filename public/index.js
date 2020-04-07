@@ -8,6 +8,7 @@ const local = true; // true if running locally, false
 
 let playerDetails;
 let currentCards = [];
+let cardsPlayed = [];
 let plusButton, minusButton, bidButton;
 let bidValue = 0;
 let cardsInRound = 0;
@@ -41,6 +42,9 @@ function draw() {
     //text(id, 40, 40);
 
     for (card of currentCards) {
+        card.display();
+    }
+    for (card of cardsPlayed) {
         card.display();
     }
 
@@ -87,11 +91,11 @@ function drawMessageText(x, y, message) {
 function onReceiveData(incomingGameState) {
     // Input data processing here. --->
     //console.log(incomingGameState);
-    if (incomingGameState.type == "roundFinished") {
+    if (incomingGameState.type == "handFinished") {
         infoMessage = "Player " + incomingGameState.winner + " won that hand";
         setTimeout(function() {
             infoMessage = '';
-            sendData('nextRound', 'start next round');
+            sendData("gameState", gameState);
         }, 4000);
     }
 
@@ -120,6 +124,8 @@ function onReceiveData(incomingGameState) {
         var xPos = 100;
 
         if (gameState.cardData) {
+            currentCards = [];
+            playedCards = [];
             //print(data.deck.hands);
             for (var i = 0; i <= gameState.cardData.hands.length + 1; i++) {
                 for (player of gameState.cardData.hands) {
@@ -134,7 +140,9 @@ function onReceiveData(incomingGameState) {
                                     100,
                                     200,
                                     card.suit,
-                                    card.number
+                                    card.number,
+                                    '',
+                                    card.shouldDisplay
                                 )
                             );
                             xPos += 110;
@@ -142,6 +150,9 @@ function onReceiveData(incomingGameState) {
                     }
                 }
             }
+
+
+            print('currentCards', currentCards);
 
             plusButton = new Button(400, 400, 100, 100, "+", gameState.cardData.trump.suit);
             minusButton = new Button(500, 400, 100, 100, "-", gameState.cardData.trump.suit);
@@ -161,7 +172,7 @@ function onReceiveData(incomingGameState) {
         if (gameState.cardsPlayed) {
             var xPos = 0;
             for (cardPlayed of gameState.cardsPlayed) {
-                currentCards.push(new Card(10 + xPos * 110, 50, 100, 200, cardPlayed.suit, cardPlayed.number, "[P " + cardPlayed.player + "]"));
+                cardsPlayed.push(new Card(10 + xPos * 110, 50, 100, 200, cardPlayed.suit, cardPlayed.number, "[P " + cardPlayed.player + "]"));
                 xPos++;
             }
         }
@@ -183,7 +194,6 @@ function mousePressed() {
                     if (player.id == id) {
                         player.currentCard = card;
                         tempCard = card;
-
                     }
                 }
 
@@ -191,34 +201,47 @@ function mousePressed() {
         }
 
         if (wasHit) {
-
-            // currentCards.push(new Card(10 + gameState.cardsPlayedInCurrentHand * 110, 50, 100, 200, tempCard.suit, tempCard.number, "[P " + playerDetails.number + "]"));
-            print("The following cards were played in this hand");
-            for (card of gameState.cardsPlayed) {
-                print(card);
-            }
+            // print("The following cards were played in this hand");
+            //for (card of gameState.cardsPlayed) {
+            // print(card);
+            //}
 
             var noTrump = true;
-            for (card of currentCards) {
-                print(card.suit, gameState.cardData.trump.suit);
-                if (card.suit == gameState.cardData.trump.suit)
-                    noTrump = false;
+            if (gameState.cardsPlayed.length) {
+                for (card of currentCards) {
+                    print(card.suit, gameState.cardsPlayed[0].suit);
+                    if (card.suit == gameState.cardsPlayed[0].suit) {
+                        noTrump = false;
+                        print("found a trump");
+                    }
+                }
             }
 
             if (gameState.cardsPlayed.length == 0 || gameState.cardsPlayed[0].suit == tempCard.suit || tempCard.number == 'w' || noTrump) {
                 gameState.cardsPlayed.push({ player: playerDetails.number, suit: tempCard.suit, number: tempCard.number });
                 infoMessage = '';
                 gameState.cardsPlayedInCurrentHand++;
+                print(gameState.cardData.hands[0]);
+
+                for (var i = 0; i <= gameState.cardData.hands.length + 1; i++) {
+                    for (player of gameState.cardData.hands) {
+                        if (playerDetails.number == i) {
+                            for (card of player[i]) {
+                                print("Card:", card);
+                                if (card.number == tempCard.number) {
+                                    card.shouldDisplay = false;
+                                    i = gameState.cardData.hands.length + 10;
+                                }
+                                print("Card:", card);
+                            }
+                        }
+                    }
+                }
+
                 sendData("gameState", gameState);
             } else
                 infoMessage = 'You must follow suit..';
-
-
-
-
-
         }
-
     }
 
     if (plusButton.hitTest() == true) {

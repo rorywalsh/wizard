@@ -20,7 +20,7 @@ const serverPort = "3000";
 const local = true; // true if running locally, false
 // if running on remote server
 
-let deck;
+let hands;
 let plusPlayers, minusPlayers;
 let numberOfPlayers = 0;
 let createLink;
@@ -41,6 +41,7 @@ function setup() {
 
     gameState = {
         players: [],
+        currentCards: [],
         score: null,
         cardData: null,
         dealer: 0,
@@ -101,9 +102,9 @@ function onClientConnect(data) {
     });
 
     if (gameState.players.length == numberOfPlayers) {
-        deck = new Cards();
-        deck.deal(11, gameState.players.length);
-        gameState.cardData = deck;
+        hands = new Cards();
+        hands.deal(3, gameState.players.length);
+        gameState.cardData = hands;
         gameState.currentBidder = currentBidder;
         currentBidder++;
         gameState.state = 'bidding';
@@ -167,10 +168,13 @@ function onReceiveData(data) {
                 for (card of gameState.cardsPlayed) {
                     // print(card);
                     if (card.number == 'w') {
-                        print("Player " + card.player + " has won this round");
+                        print("Player " + card.player + " has won this hand");
                         gameState.players[card.player].handsWon++;
                         wizardWasPlayed = true;
-                        sendData('roundFinished', { winner: card.player });
+                        gameState.cardsPlayedInCurrentHand = 0;
+                        gameState.cardsPlayed = [];
+                        gameState.playerToPlay = card.player;
+                        sendData('handFinished', { winner: card.player });
                     }
                 }
                 if (wizardWasPlayed == false) {
@@ -186,16 +190,16 @@ function onReceiveData(data) {
 
                     for (card of gameState.cardsPlayed) {
                         if (card.number == max) {
-                            print("Player " + card.player + " has won this round");
+                            print("Player " + card.player + " has won this hand");
                             gameState.players[card.player].handsWon++;
-                            sendData('roundFinished', { winner: playerIndex });
+                            gameState.cardsPlayedInCurrentHand = 0;
+                            gameState.playerToPlay = card.player;
+                            gameState.cardsPlayed = [];
+                            sendData('handFinished', { winner: card.player });
                         }
                     }
-
-
                 }
             }
-
         }
 
 

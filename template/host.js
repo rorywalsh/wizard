@@ -87,7 +87,7 @@ function draw() {
 }
 
 function onClientConnect(data) {
-    console.log(data.id + " has connected.");
+    //console.log(data.id + " has connected.");
 
     gameState.players.push({
         id: data.id,
@@ -108,7 +108,7 @@ function onClientConnect(data) {
         currentBidder++;
         gameState.state = 'bidding';
         sendData("gameState", gameState);
-        print(gameState);
+        // print(gameState);
     }
 }
 
@@ -156,18 +156,50 @@ function onReceiveData(data) {
         }
         //game is in progress...
         else if (gameState.state == 'playing') {
-            print("CurrentPlayer ", gameState.playerToPlay);
+            // print("CurrentPlayer ", gameState.playerToPlay);
             gameState.playerToPlay = (gameState.playerToPlay < gameState.players.length - 1 ? gameState.playerToPlay + 1 : 0);
-            print("=============");
-            console.log(gameState.playerToPlay);
+            // print("Hands played========");
+            // console.log(gameState.cardsPlayedInCurrentHand);
             if (gameState.cardsPlayedInCurrentHand == gameState.players.length) {
-                alert("round finished");
+
+                var wizardWasPlayed = false;
+                //player played a wizard...
+                for (card of gameState.cardsPlayed) {
+                    // print(card);
+                    if (card.number == 'w') {
+                        print("Player " + card.player + " has won this round");
+                        gameState.players[card.player].handsWon++;
+                        wizardWasPlayed = true;
+                        sendData('roundFinished', { winner: card.player });
+                    }
+                }
+                if (wizardWasPlayed == false) {
+                    // print(card);
+                    var max = gameState.cardsPlayed[0].number;
+                    print(gameState.cardsPlayed[0].number);
+                    for (var i = 1; i < gameState.cardsPlayed.length; i++) {
+                        print(gameState.cardsPlayed[i].number);
+                        if (gameState.cardsPlayed[i].number > max) {
+                            max = gameState.cardsPlayed[i].number;
+                        }
+                    }
+
+                    for (card of gameState.cardsPlayed) {
+                        if (card.number == max) {
+                            print("Player " + card.player + " has won this round");
+                            gameState.players[card.player].handsWon++;
+                            sendData('roundFinished', { winner: playerIndex });
+                        }
+                    }
+
+
+                }
             }
 
         }
 
 
         sendData("gameState", gameState);
-        print(gameState);
+        //print(gameState);
     }
 }

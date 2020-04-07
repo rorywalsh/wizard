@@ -19,7 +19,7 @@ let port = Number(process.env.PORT || 3000);
 let server = require('https').createServer(options, app);
 server.listen(port);
 
-app.use(express.static('template'));
+app.use(express.static('public'));
 console.log("My socket server is running on port " + port);
 
 ////////////

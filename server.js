@@ -10,7 +10,7 @@ let app = express();
 let port = Number(process.env.PORT || 3000);
 let server = app.listen(port);
 
-app.use(express.static('template'));
+app.use(express.static('public'));
 console.log("My socket server is running on port " + port);
 
 ////////////

@@ -15,300 +15,191 @@ Run http-server -c-1 -p80 to start server on open port 80.
 // Network Settings
 // const serverIp      = 'https://yourservername.herokuapp.com';
 // const serverIp      = 'https://yourprojectname.glitch.me';
-const serverIp      = '127.0.0.1';
-const serverPort    = '3000';
-const local         = true;   // true if running locally, false
-                              // if running on remote server
+const serverIp = "127.0.0.1";
+const serverPort = "3000";
+const local = true; // true if running locally, false
+// if running on remote server
 
-// Global variables here. ---->
+let deck;
+let plusPlayers, minusPlayers;
+let numberOfPlayers = 0;
+let createLink;
+let linkCreated = false;
+let currentBidder = 0;
 
-const velScale	= 10;
-const debug = true;
-let game;
-
-// <----
+let gameState;
 
 function preload() {
-  setupHost();
+    setupHost();
 }
 
-function setup () {
-  createCanvas(windowWidth, windowHeight);
+function setup() {
+    createCanvas(windowWidth, windowHeight);
+    plusPlayers = new Button(100, 100, 100, 100, "+", "red");
+    minusPlayers = new Button(200, 100, 100, 100, "-", "red");
+    createLink = new Button(500, 100, 200, 100, "Generate Game Link", "green");
 
-  // Host/Game setup here. ---->
-  
-  game = new Game(width, height);
-
-  // <----
+    gameState = {
+        players: [],
+        score: null,
+        cardData: null,
+        dealer: 0,
+        currentBidder: 0,
+        playerToPlay: 0,
+        cardsPlayedInCurrentHand: 0,
+        handsPlayed: 0,
+        cardsPlayed: [],
+        state: 'dealing'
+    };
 }
 
 function windowResized() {
-  resizeCanvas(windowWidth, windowHeight);
+    resizeCanvas(windowWidth, windowHeight);
 }
 
-function draw () {
-  background(15);
+function draw() {
+    background(15);
+    textSize(32);
+    textAlign(CENTER);
+    fill(255);
+    text("Number of players: " + numberOfPlayers.toString(), 200, 250);
+    if (linkCreated) text(serverIp + "/?=" + roomId, 600, 250);
 
-  if(isHostConnected(display=true)) {
-    // Host/Game draw here. --->
+    textSize(50);
+    fill("blue");
+    fill(255);
+    if (gameState.players.length > 0) {
+        text(
+            "Game Status: " +
+            (gameState.players.length == numberOfPlayers ?
+                "In Progress" :
+                "Initiliasing"),
+            400,
+            400
+        );
+    } else text("Game Status: Unknown", 400, 400);
 
-    // Display player IDs in top left corner
-    game.printPlayerIds(5, 20);
+    plusPlayers.display();
+    minusPlayers.display();
+    createLink.display();
 
-    // Update and draw game objects
-    game.draw();
-
-    // <----
-
-    // Display server address
-    displayAddress();
-  }
+    if (isHostConnected((display = true))) {}
 }
 
-function onClientConnect (data) {
-  // Client connect logic here. --->
-  console.log(data.id + ' has connected.');
+function onClientConnect(data) {
+    //console.log(data.id + " has connected.");
 
-  if (!game.checkId(data.id)) {
-    game.add(data.id,
-            random(0.25*width, 0.75*width),
-            random(0.25*height, 0.75*height),
-            60, 60
-    );
-  }
+    gameState.players.push({
+        id: data.id,
+        number: gameState.players.length,
+        bid: -1,
+        turn: false,
+        handsWon: 0,
+        score: 0,
+        currentCard: { suit: '', value: -1 }
 
-  // <----
+    });
+
+    if (gameState.players.length == numberOfPlayers) {
+        deck = new Cards();
+        deck.deal(11, gameState.players.length);
+        gameState.cardData = deck;
+        gameState.currentBidder = currentBidder;
+        currentBidder++;
+        gameState.state = 'bidding';
+        sendData("gameState", gameState);
+        // print(gameState);
+    }
 }
 
-function onClientDisconnect (data) {
-  // Client disconnect logic here. --->
+var numMousePresses = 0;
 
-  if (game.checkId(data.id)) {
-    game.remove(data.id);
-  }
-
-  // <----
-}
-
-function onReceiveData (data) {
-  // Input data processing here. --->
-  console.log(data);
-
-  if (data.type === 'joystick') {
-    processJoystick(data);
-  }
-  else if (data.type === 'button') {
-    processButton(data);
-  }
-  else if (data.type === 'playerColor') {
-    game.setColor(data.id, data.r*255, data.g*255, data.b*255);
-  }
-
-  // <----
-
-  /* Example:
-     if (data.type === 'myDataType') {
-       processMyData(data);
-     }
-
-     Use `data.type` to get the message type sent by client.
-  */
-}
-
-// This is included for testing purposes to demonstrate that
-// messages can be sent from a host back to all connected clients
 function mousePressed() {
-  sendData('timestamp', { timestamp: millis() });
-}
-
-////////////
-// Input processing
-function processJoystick (data) {
-  
-  game.setVelocity(data.id, data.joystickX*velScale, -data.joystickY*velScale);
-
-  if (debug) {
-    console.log(data.id + ': {' +
-                data.joystickX + ',' +
-                data.joystickY + '}');
-  }
-}
-
-function processButton (data) {
-  game.players[data.id].val = data.button;
-
-  game.createRipple(data.id, 300, 1000);
-  
-  if (debug) {
-    console.log(data.id + ': ' +
-                data.button);
-  }
-}
-
-////////////
-// Game
-// This simple placeholder game makes use of p5.play
-class Game {
-  constructor (w, h) {
-    this.w          = w;
-    this.h          = h;
-    this.players	= {};
-    this.numPlayers	= 0;
-    this.id         = 0;
-    this.colliders	= new Group();
-    this.ripples    = new Ripples();
-  }
-
-  add (id, x, y, w, h) {
-    this.players[id] = createSprite(x, y, w, h);
-    this.players[id].id = "p"+this.id;
-    this.players[id].setCollider("rectangle", 0, 0, w, h);
-    this.players[id].color = color(255, 255, 255);
-    this.players[id].shapeColor = color(255, 255, 255);
-    this.players[id].scale = 1;
-    this.players[id].mass = 1;
-    this.colliders.add(this.players[id]);
-    print(this.players[id].id + " added.");
-    this.id++;
-    this.numPlayers++;
-  }
-
-  draw() {
-    this.checkBounds();
-    this.ripples.draw();
-    drawSprites();
-  }
-
-  createRipple(id, r, duration) {
-    this.ripples.add(
-      this.players[id].position.x, 
-      this.players[id].position.y, 
-      r, 
-      duration, 
-      this.players[id].color);
-  }
-
-  setColor (id, r, g, b) {
-    this.players[id].color = color(r, g, b);
-    this.players[id].shapeColor = color(r, g, b);
-
-    print(this.players[id].id + " color added.");
-  }
-
-  remove (id) {
-      this.colliders.remove(this.players[id]);
-      this.players[id].remove();
-      delete this.players[id];
-      this.numPlayers--;
-  }
-
-  checkId (id) {
-      if (id in this.players) { return true; }
-      else { return false; }
-  }
-
-  printPlayerIds (x, y) {
-      push();
-          noStroke();
-          fill(255);
-          textSize(16);
-          text("# players: " + this.numPlayers, x, y);
-
-          y = y + 16;
-          fill(200);
-          for (let id in this.players) {
-              text(this.players[id].id, x, y);
-              y += 16;
-          }
-
-      pop();
-  }
-
-  setVelocity(id, velx, vely) {
-      this.players[id].velocity.x = velx;
-      this.players[id].velocity.y = vely;
-  }
-
-  checkBounds() {
-      for (let id in this.players) {
-
-          if (this.players[id].position.x < 0) {
-              this.players[id].position.x = this.w - 1;
-          }
-
-          if (this.players[id].position.x > this.w) {
-              this.players[id].position.x = 1;
-          }
-
-          if (this.players[id].position.y < 0) {
-              this.players[id].position.y = this.h - 1;
-          }
-
-          if (this.players[id].position.y > this.h) {
-              this.players[id].position.y = 1;
-          }
-      }
-  }
-}
-
-// A simple pair of classes for generating ripples
-class Ripples {
-  constructor() {
-    this.ripples = [];
-  }
-
-  add(x, y, r, duration, rcolor) {
-    this.ripples.push(new Ripple(x, y, r, duration, rcolor));
-  }
-
-  draw() {
-    for (let i = 0; i < this.ripples.length; i++) {
-      // Draw each ripple in the array
-      if(this.ripples[i].draw()) {
-        // If the ripple is finished (returns true), remove it
-        this.ripples.splice(i, 1);
-      }
-    }
-  }
-}
-
-class Ripple {
-  constructor(x, y, r, duration, rcolor) {
-    this.x = x;
-    this.y = y;
-    this.r = r;
-
-    // If rcolor is not defined, default to white
-    if (rcolor == null) {
-      rcolor = color(255);
+    if (plusPlayers.hitTest() == true) {
+        numberOfPlayers++;
     }
 
-    this.stroke = rcolor;
-    this.strokeWeight = 3;
-
-    this.duration = duration;   // in milliseconds
-    this.startTime = millis();
-    this.endTime = this.startTime + this.duration;
-  }
-
-  draw() {
-    let progress = (this.endTime - millis())/this.duration;
-    let r = this.r*(1 - progress);
-
-    push();
-      stroke(red(this.stroke), 
-             green(this.stroke), 
-             blue(this.stroke), 
-             255*progress);
-      strokeWeight(this.strokeWeight);
-      fill(0, 0);
-      ellipse(this.x, this.y, r);
-    pop();
-
-    if (millis() > this.endTime) {
-      return true;
+    if (minusPlayers.hitTest() == true) {
+        numberOfPlayers = numberOfPlayers > 0 ? numberOfPlayers - 1 : 0;
     }
 
-    return false;
-  }
+    if (createLink.hitTest() == true) {
+        linkCreated = true;
+    }
+    if (gameState.players.length > 0) {
+        if (numMousePresses == 0) {} else if (numMousePresses == 1) {}
+
+        numMousePresses++;
+    }
+}
+
+function onClientDisconnect(data) {}
+
+function onReceiveData(data) {
+    // Input data processing here. --->
+
+    if (data.type == "gameState") {
+        gameState = data;
+
+        //game is still in bidding process
+        if (gameState.state == 'bidding') {
+            gameState.currentBidder = currentBidder;
+
+            //check bidding has finished
+            if (currentBidder == gameState.players.length) {
+                gameState.playerToPlay = gameState.dealer + 1;
+                gameState.state = 'playing';
+                currentBidder = -10;
+                gameState.dealer++;
+            }
+            currentBidder++;
+        }
+        //game is in progress...
+        else if (gameState.state == 'playing') {
+            // print("CurrentPlayer ", gameState.playerToPlay);
+            gameState.playerToPlay = (gameState.playerToPlay < gameState.players.length - 1 ? gameState.playerToPlay + 1 : 0);
+            // print("Hands played========");
+            // console.log(gameState.cardsPlayedInCurrentHand);
+            if (gameState.cardsPlayedInCurrentHand == gameState.players.length) {
+
+                var wizardWasPlayed = false;
+                //player played a wizard...
+                for (card of gameState.cardsPlayed) {
+                    // print(card);
+                    if (card.number == 'w') {
+                        print("Player " + card.player + " has won this round");
+                        gameState.players[card.player].handsWon++;
+                        wizardWasPlayed = true;
+                        sendData('roundFinished', { winner: card.player });
+                    }
+                }
+                if (wizardWasPlayed == false) {
+                    // print(card);
+                    var max = gameState.cardsPlayed[0].number;
+                    print(gameState.cardsPlayed[0].number);
+                    for (var i = 1; i < gameState.cardsPlayed.length; i++) {
+                        print(gameState.cardsPlayed[i].number);
+                        if (gameState.cardsPlayed[i].number > max) {
+                            max = gameState.cardsPlayed[i].number;
+                        }
+                    }
+
+                    for (card of gameState.cardsPlayed) {
+                        if (card.number == max) {
+                            print("Player " + card.player + " has won this round");
+                            gameState.players[card.player].handsWon++;
+                            sendData('roundFinished', { winner: playerIndex });
+                        }
+                    }
+
+
+                }
+            }
+
+        }
+
+
+        sendData("gameState", gameState);
+        //print(gameState);
+    }
 }

@@ -16,6 +16,7 @@ let displayYourTurnText = false;
 let numberOfPlayers = 0;
 let gameState;
 let firstTimeConnection = true;
+let infoMessage = '';
 
 function preload() {
     setupClient();
@@ -47,8 +48,8 @@ function draw() {
     if (minusButton) minusButton.display();
     if (bidButton) bidButton.display();
 
-    if (displayBiddingText)
-        drawMessageText(600, 650, "Please make a bid..");
+    if (infoMessage.length > 0)
+        drawMessageText(600, 650, infoMessage);
 
     if (displayYourTurnText)
         drawMessageText(700, 650, "Please select a card to play.");
@@ -85,7 +86,14 @@ function drawMessageText(x, y, message) {
 ////////////////////////////////////////
 function onReceiveData(incomingGameState) {
     // Input data processing here. --->
-    console.log(incomingGameState);
+    //console.log(incomingGameState);
+    if (incomingGameState.type == "roundFinished") {
+        infoMessage = "Player " + incomingGameState.winner + " won that hand";
+        setTimeout(function() {
+            infoMessage = '';
+            sendData('nextRound', 'start next round');
+        }, 4000);
+    }
 
     if (incomingGameState.type == "gameState") {
         gameState = incomingGameState;
@@ -95,31 +103,30 @@ function onReceiveData(incomingGameState) {
             for (player of gameState.players) {
                 if (player.id == id) {
                     playerDetails = { id: id, number: player.number };
-                    print("PlayerDetails:", playerDetails);
+                    //print("PlayerDetails:", playerDetails);
                 }
             }
             firstTimeConnection = false;
         }
 
         if (playerDetails.number == gameState.currentBidder && gameState.state == 'bidding') {
-            displayBiddingText = true;
+            infoMessage = "Please bid";
         }
 
         if (playerDetails.number == gameState.playerToPlay && gameState.state == 'playing') {
-            displayYourTurnText = true;
+            infoMessage = 'Please select a card';
         }
 
         var xPos = 100;
 
         if (gameState.cardData) {
-            print("numberOfHands:", gameState.cardData.hands.length + 1);
             //print(data.deck.hands);
             for (var i = 0; i <= gameState.cardData.hands.length + 1; i++) {
                 for (player of gameState.cardData.hands) {
                     if (playerDetails.number == i) {
                         for (card of player[i]) {
                             cardsInRound++;
-                            print(card);
+                            // print(card);
                             currentCards.push(
                                 new Card(
                                     xPos + 300,
@@ -173,7 +180,6 @@ function mousePressed() {
             if (card.hitTest()) {
                 wasHit = true;
                 for (player of gameState.players) {
-                    print(player.id, id);
                     if (player.id == id) {
                         player.currentCard = card;
                         tempCard = card;
@@ -187,11 +193,30 @@ function mousePressed() {
         if (wasHit) {
 
             // currentCards.push(new Card(10 + gameState.cardsPlayedInCurrentHand * 110, 50, 100, 200, tempCard.suit, tempCard.number, "[P " + playerDetails.number + "]"));
-            gameState.cardsPlayed.push({ player: playerDetails.number, suit: tempCard.suit, number: tempCard.number });
+            print("The following cards were played in this hand");
+            for (card of gameState.cardsPlayed) {
+                print(card);
+            }
 
-            displayYourTurnText = false;
-            sendData("gameState", gameState);
-            gameState.cardsPlayedInCurrentHand++;
+            var noTrump = true;
+            for (card of currentCards) {
+                print(card.suit, gameState.cardData.trump.suit);
+                if (card.suit == gameState.cardData.trump.suit)
+                    noTrump = false;
+            }
+
+            if (gameState.cardsPlayed.length == 0 || gameState.cardsPlayed[0].suit == tempCard.suit || tempCard.number == 'w' || noTrump) {
+                gameState.cardsPlayed.push({ player: playerDetails.number, suit: tempCard.suit, number: tempCard.number });
+                infoMessage = '';
+                gameState.cardsPlayedInCurrentHand++;
+                sendData("gameState", gameState);
+            } else
+                infoMessage = 'You must follow suit..';
+
+
+
+
+
         }
 
     }
@@ -206,13 +231,13 @@ function mousePressed() {
     }
     if (playerDetails.number == gameState.currentBidder) {
         if (bidButton.hitTest() == true) {
-            displayBiddingText = false;
+            infoMessage = '';
             for (player of gameState.players) {
                 if (player.id == id) {
                     player.bid = bidValue;
                 }
             }
-            print(gameState);
+            // print(gameState);
 
             sendData("gameState", gameState);
         }

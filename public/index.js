@@ -1,205 +1,252 @@
-/*
-p5.multiplayer - CLIENT
-
-This 'client' sketch is intended to be run in either mobile or 
-desktop browsers. It sends a basic joystick and button input data 
-to a node server via socket.io. This data is then rerouted to a 
-'host' sketch, which displays all connected 'clients'.
-
-Navigate to the project's 'public' directory.
-Run http-server -c-1 to start server. This will default to port 8080.
-Run http-server -c-1 -p80 to start server on open port 80.
-
-*/
-
-////////////
 // Network Settings
 // const serverIp      = 'https://yourservername.herokuapp.com';
 // const serverIp      = 'https://yourprojectname.glitch.me';
-const serverIp      = '127.0.0.1';
-const serverPort    = '3000';
-const local         = true;   // true if running locally, false
-                              // if running on remote server
+const serverIp = "127.0.0.1";
+const serverPort = "3000";
+const local = true; // true if running locally, false
+// if running on remote server
 
-// Global variables here. ---->
-
-// Initialize GUI related variables
-let gui         = null;
-let button      = null;
-let joystick    = null;
-let joystickRes = 4;
-let thisJ       = {x: 0, y: 0};
-let prevJ       = {x: 0, y: 0};
-
-// Initialize Game related variables
-let playerColor;
-let playerColorDim;
-
-// <----
+let playerDetails;
+let currentCards = [];
+let plusButton, minusButton, bidButton;
+let bidValue = 0;
+let cardsInRound = 0;
+let displayBiddingText = false;
+let displayYourTurnText = false;
+let numberOfPlayers = 0;
+let gameState;
+let firstTimeConnection = true;
+let infoMessage = '';
 
 function preload() {
-  setupClient();
+    setupClient();
+    noLoop();
+    setInterval(draw, 0.1);
 }
 
 function setup() {
-  createCanvas(windowWidth, windowHeight);
-
-  // Client setup here. ---->
-  
-  gui = createGui();
-
-  setPlayerColors();
-  setupUI();
-
-  // <----
-
-  // Send any initial setup data to your host here.
-  /* 
-    Example: 
-    sendData('myDataType', { 
-      val1: 0,
-      val2: 128,
-      val3: true
-    });
-
-     Use `type` to classify message types for host.
-  */
-  sendData('playerColor', { 
-    r: red(playerColor)/255,
-    g: green(playerColor)/255,
-    b: blue(playerColor)/255
-  });
-} 
+    createCanvas(windowWidth, windowHeight);
+}
 
 function windowResized() {
-  resizeCanvas(windowWidth, windowHeight);
+    resizeCanvas(windowWidth, windowHeight);
 }
 
 function draw() {
-  background(0);
+    // print("Drawing");
+    background(0);
 
-  if(isClientConnected(display=true)) {
-    // Client draw here. ---->
+    //fill(255);
+    //textSize(20);
+    //text(id, 40, 40);
 
-    drawGui();
-
-    // <---
-  }
-}
-
-// Messages can be sent from a host to all connected clients
-function onReceiveData (data) {
-  // Input data processing here. --->
-
-  if (data.type === 'timestamp') {
-    print(data.timestamp);
-  }
-
-  // <----
-
-  /* Example:
-     if (data.type === 'myDataType') {
-       processMyData(data);
-     }
-
-     Use `data.type` to get the message type sent by host.
-  */
-}
-
-////////////
-// GUI setup
-function setPlayerColors() {
-  let hue = random(0, 360);
-  colorMode(HSB);
-  playerColor = color(hue, 100, 100);
-  playerColorDim = color(hue, 100, 75);
-  colorMode(RGB);
-}
-
-function setupUI() {
-  // Temp variables for calculating GUI object positions
-  let jX, jY, jW, jH, bX, bY, bW, bH;
-  
-  // Rudimentary calculation based on portrait or landscape 
-  if (width < height) {
-    jX = 0.05*width;
-    jY = 0.05*height;
-    jW = 0.9*width;
-    jH = 0.9*width;
-    
-    bX = 0.05*windowWidth;
-    bY = 0.75*windowHeight;
-    bW = 0.9*windowWidth;
-    bH = 0.2*windowHeight;
-  }
-  else {
-    jX = 0.05*width;
-    jY = 0.05*height;
-    jW = 0.9*height;
-    jH = 0.9*height;
-    
-    bX = 0.75*windowWidth;
-    bY = 0.05*windowHeight;
-    bW = 0.2*windowWidth;
-    bH = 0.9*windowHeight;
-  }
-  
-  // Create joystick and button, stylize with player colors
-  joystick = createJoystick("Joystick", jX, jY, jW, jH);
-  joystick.setStyle({
-    handleRadius:     joystick.w*0.2, 
-    fillBg:           color(0), 
-    fillBgHover:      color(0), 
-    fillBgActive:     color(0), 
-    strokeBg:         playerColor, 
-    strokeBgHover:    playerColor, 
-    strokeBgActive:   playerColor, 
-    fillHandle:       playerColorDim, 
-    fillHandleHover:  playerColorDim, 
-    fillHandleActive: playerColor,
-    strokeHandleHover:  color(255),
-    strokeHandleActive: color(255)
-  });
-  joystick.onChange = onJoystickChange;
-  
-  button = createButton("Interact", bX, bY, bW, bH);
-  button.setStyle({
-    textSize: 40,
-    fillBg: playerColorDim,
-    fillBgHover: playerColorDim,
-    fillBgActive: playerColor
-  });
-  button.onPress = onButtonPress;
-}
-
-////////////
-// Input processing
-function onJoystickChange() {  
-  thisJ.x = floor(joystick.val.x*joystickRes)/joystickRes;
-  thisJ.y = floor(joystick.val.y*joystickRes)/joystickRes;
-  
-  if (thisJ.x != prevJ.x || thisJ.y != prevJ.y) {
-    let data = {
-      joystickX: thisJ.x,
-      joystickY: thisJ.y
+    for (card of currentCards) {
+        card.display();
     }
-    sendData('joystick', data);
-  }
-  
-  prevJ.x = thisJ.x;
-  prevJ.y = thisJ.y;
+
+    if (plusButton) plusButton.display();
+    if (minusButton) minusButton.display();
+    if (bidButton) bidButton.display();
+
+    if (infoMessage.length > 0)
+        drawMessageText(600, 650, infoMessage);
+
+    if (displayYourTurnText)
+        drawMessageText(700, 650, "Please select a card to play.");
+
+
+
+
+    if (gameState) {
+        fill(255);
+        textSize(52);
+        textAlign(CENTER);
+        for (var i = 0; i < gameState.players.length; i++) {
+            text(
+                "[Player " + gameState.players[i].number + "] [Bid:" + (gameState.players[i].bid > -1 ? gameState.players[i].bid : '-') + "] [Hands Won:" + gameState.players[i].handsWon + "] [Score:" + gameState.players[i].score + ']',
+                1300,
+                400 + 60 * i
+            );
+        }
+    }
+
+    if (isClientConnected((display = true))) {}
 }
 
-function onButtonPress() {
-  let data = {
-    button: button.val
-  }
-  
-  sendData('button', data);
+function drawMessageText(x, y, message) {
+    fill(255);
+    textSize(52);
+    textAlign(CENTER);
+    text(message, x, y);
 }
+
+////////////////////////////////////////
+// onReceiveData
+// NOTE TO SELF: This is triggered for every instance of this script when the host outputs something....
+////////////////////////////////////////
+function onReceiveData(incomingGameState) {
+    // Input data processing here. --->
+    //console.log(incomingGameState);
+    if (incomingGameState.type == "roundFinished") {
+        infoMessage = "Player " + incomingGameState.winner + " won that hand";
+        setTimeout(function() {
+            infoMessage = '';
+            sendData('nextRound', 'start next round');
+        }, 4000);
+    }
+
+    if (incomingGameState.type == "gameState") {
+        gameState = incomingGameState;
+
+        numberOfPlayers = gameState.players.length;
+        if (firstTimeConnection) {
+            for (player of gameState.players) {
+                if (player.id == id) {
+                    playerDetails = { id: id, number: player.number };
+                    //print("PlayerDetails:", playerDetails);
+                }
+            }
+            firstTimeConnection = false;
+        }
+
+        if (playerDetails.number == gameState.currentBidder && gameState.state == 'bidding') {
+            infoMessage = "Please bid";
+        }
+
+        if (playerDetails.number == gameState.playerToPlay && gameState.state == 'playing') {
+            infoMessage = 'Please select a card';
+        }
+
+        var xPos = 100;
+
+        if (gameState.cardData) {
+            //print(data.deck.hands);
+            for (var i = 0; i <= gameState.cardData.hands.length + 1; i++) {
+                for (player of gameState.cardData.hands) {
+                    if (playerDetails.number == i) {
+                        for (card of player[i]) {
+                            cardsInRound++;
+                            // print(card);
+                            currentCards.push(
+                                new Card(
+                                    xPos + 300,
+                                    700,
+                                    100,
+                                    200,
+                                    card.suit,
+                                    card.number
+                                )
+                            );
+                            xPos += 110;
+                        }
+                    }
+                }
+            }
+
+            plusButton = new Button(400, 400, 100, 100, "+", gameState.cardData.trump.suit);
+            minusButton = new Button(500, 400, 100, 100, "-", gameState.cardData.trump.suit);
+            bidButton = new Button(
+                400,
+                500,
+                200,
+                100,
+                "Bid:0",
+                gameState.cardData.trump.suit
+            );
+            currentCards.push(
+                new Card(120, 400, 200, 400, gameState.cardData.trump.suit, "Trump")
+            );
+        }
+
+        if (gameState.cardsPlayed) {
+            var xPos = 0;
+            for (cardPlayed of gameState.cardsPlayed) {
+                currentCards.push(new Card(10 + xPos * 110, 50, 100, 200, cardPlayed.suit, cardPlayed.number, "[P " + cardPlayed.player + "]"));
+                xPos++;
+            }
+        }
+
+    }
+}
+
+
+/////////////////////
+// mousePressed
+/////////////////////
+function mousePressed() {
+    var tempCard, wasHit = false;
+    if (playerDetails.number == gameState.playerToPlay && gameState.state == 'playing') {
+        for (card of currentCards) {
+            if (card.hitTest()) {
+                wasHit = true;
+                for (player of gameState.players) {
+                    if (player.id == id) {
+                        player.currentCard = card;
+                        tempCard = card;
+
+                    }
+                }
+
+            }
+        }
+
+        if (wasHit) {
+
+            // currentCards.push(new Card(10 + gameState.cardsPlayedInCurrentHand * 110, 50, 100, 200, tempCard.suit, tempCard.number, "[P " + playerDetails.number + "]"));
+            print("The following cards were played in this hand");
+            for (card of gameState.cardsPlayed) {
+                print(card);
+            }
+
+            var noTrump = true;
+            for (card of currentCards) {
+                print(card.suit, gameState.cardData.trump.suit);
+                if (card.suit == gameState.cardData.trump.suit)
+                    noTrump = false;
+            }
+
+            if (gameState.cardsPlayed.length == 0 || gameState.cardsPlayed[0].suit == tempCard.suit || tempCard.number == 'w' || noTrump) {
+                gameState.cardsPlayed.push({ player: playerDetails.number, suit: tempCard.suit, number: tempCard.number });
+                infoMessage = '';
+                gameState.cardsPlayedInCurrentHand++;
+                sendData("gameState", gameState);
+            } else
+                infoMessage = 'You must follow suit..';
+
+
+
+
+
+        }
+
+    }
+
+    if (plusButton.hitTest() == true) {
+        bidValue = bidValue < cardsInRound ? bidValue + 1 : cardsInRound;
+        bidButton.text = "Bid:" + bidValue.toString();
+    }
+    if (minusButton.hitTest() == true) {
+        bidValue = bidValue > 0 ? bidValue - 1 : 0;
+        bidButton.text = "Bid:" + bidValue.toString();
+    }
+    if (playerDetails.number == gameState.currentBidder) {
+        if (bidButton.hitTest() == true) {
+            infoMessage = '';
+            for (player of gameState.players) {
+                if (player.id == id) {
+                    player.bid = bidValue;
+                }
+            }
+            // print(gameState);
+
+            sendData("gameState", gameState);
+        }
+    }
+}
+
 
 /// Add these lines below sketch to prevent scrolling on mobile
 function touchMoved() {
-  // do some stuff
-  return false;
+    // do some stuff
+    return false;
 }

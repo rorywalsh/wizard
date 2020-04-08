@@ -9,6 +9,7 @@ const local = true; // true if running locally, false
 let playerDetails;
 let currentCards = [];
 let cardsPlayed = [];
+let trumpCard;
 let plusButton, minusButton, bidButton;
 let bidValue = 0;
 let cardsInRound = 0;
@@ -37,9 +38,10 @@ function draw() {
     // print("Drawing");
     background(0);
 
-    //fill(255);
-    //textSize(20);
-    //text(id, 40, 40);
+    textAlign(LEFT);
+    textSize(30);
+    if (playerDetails)
+        text("Player " + playerDetails.number, 140, 900);
 
     for (card of currentCards) {
         card.display();
@@ -48,18 +50,13 @@ function draw() {
         card.display();
     }
 
+    if (trumpCard) trumpCard.display();
     if (plusButton) plusButton.display();
     if (minusButton) minusButton.display();
     if (bidButton) bidButton.display();
 
     if (infoMessage.length > 0)
         drawMessageText(600, 650, infoMessage);
-
-    if (displayYourTurnText)
-        drawMessageText(700, 650, "Please select a card to play.");
-
-
-
 
     if (gameState) {
         fill(255);
@@ -89,18 +86,21 @@ function drawMessageText(x, y, message) {
 // NOTE TO SELF: This is triggered for every instance of this script when the host outputs something....
 ////////////////////////////////////////
 function onReceiveData(incomingGameState) {
-    // Input data processing here. --->
-    //console.log(incomingGameState);
-    if (incomingGameState.type == "handFinished") {
-        infoMessage = "Player " + incomingGameState.winner + " won that hand";
-        setTimeout(function() {
-            infoMessage = '';
-            sendData("gameState", gameState);
-        }, 4000);
-    }
 
     if (incomingGameState.type == "gameState") {
+        print(gameState);
         gameState = incomingGameState;
+
+        if (gameState.winnerOfHand != -1) {
+            infoMessage = "Player " + gameState.winnerOfHand + " won that hand";
+            setTimeout(function() {
+                gameState.playerToPlay = gameState.winnerOfHand
+                gameState.winnerOfHand = -1;
+                gameState.cardsPlayed = [];
+                infoMessage = "";
+                sendData("gameState", gameState);
+            }, 3000);
+        }
 
         numberOfPlayers = gameState.players.length;
         if (firstTimeConnection) {
@@ -164,12 +164,13 @@ function onReceiveData(incomingGameState) {
                 "Bid:0",
                 gameState.cardData.trump.suit
             );
-            currentCards.push(
-                new Card(120, 400, 200, 400, gameState.cardData.trump.suit, "Trump")
-            );
+
+            trumpCard = new Card(120, 400, 200, 400, gameState.cardData.trump.suit, "Trump");
+
         }
 
         if (gameState.cardsPlayed) {
+            cardsPlayed = [];
             var xPos = 0;
             for (cardPlayed of gameState.cardsPlayed) {
                 cardsPlayed.push(new Card(10 + xPos * 110, 50, 100, 200, cardPlayed.suit, cardPlayed.number, "[P " + cardPlayed.player + "]"));
@@ -206,18 +207,18 @@ function mousePressed() {
             // print(card);
             //}
 
-            var noTrump = true;
+            var noSuitedCard = true;
             if (gameState.cardsPlayed.length) {
                 for (card of currentCards) {
                     print(card.suit, gameState.cardsPlayed[0].suit);
                     if (card.suit == gameState.cardsPlayed[0].suit) {
-                        noTrump = false;
+                        noSuitedCard = false;
                         print("found a trump");
                     }
                 }
             }
 
-            if (gameState.cardsPlayed.length == 0 || gameState.cardsPlayed[0].suit == tempCard.suit || tempCard.number == 'w' || noTrump) {
+            if (gameState.cardsPlayed.length == 0 || gameState.cardsPlayed[0].suit == tempCard.suit || tempCard.number == 'w' || noSuitedCard) {
                 gameState.cardsPlayed.push({ player: playerDetails.number, suit: tempCard.suit, number: tempCard.number });
                 infoMessage = '';
                 gameState.cardsPlayedInCurrentHand++;
@@ -238,6 +239,7 @@ function mousePressed() {
                     }
                 }
 
+                gameState.playerToPlay = (gameState.playerToPlay < gameState.players.length - 1 ? gameState.playerToPlay + 1 : 0);
                 sendData("gameState", gameState);
             } else
                 infoMessage = 'You must follow suit..';

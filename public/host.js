@@ -46,7 +46,8 @@ function setup() {
         cardData: null,
         dealer: 0,
         currentBidder: 0,
-        playerToPlay: 0,
+        winnerOfHand: -1,
+        playerToPlay: 1,
         cardsPlayedInCurrentHand: 0,
         handsPlayed: 0,
         cardsPlayed: [],
@@ -158,44 +159,52 @@ function onReceiveData(data) {
         //game is in progress...
         else if (gameState.state == 'playing') {
             // print("CurrentPlayer ", gameState.playerToPlay);
-            gameState.playerToPlay = (gameState.playerToPlay < gameState.players.length - 1 ? gameState.playerToPlay + 1 : 0);
+            //gameState.playerToPlay = (gameState.playerToPlay < gameState.players.length - 1 ? gameState.playerToPlay + 1 : 0);
             // print("Hands played========");
             // console.log(gameState.cardsPlayedInCurrentHand);
             if (gameState.cardsPlayedInCurrentHand == gameState.players.length) {
 
                 var wizardWasPlayed = false;
-                //player played a wizard...
+
+                //first player to play a wizard wins the hand...
                 for (card of gameState.cardsPlayed) {
-                    // print(card);
+
                     if (card.number == 'w') {
                         print("Player " + card.player + " has won this hand");
                         gameState.players[card.player].handsWon++;
                         wizardWasPlayed = true;
                         gameState.cardsPlayedInCurrentHand = 0;
-                        gameState.cardsPlayed = [];
-                        gameState.playerToPlay = card.player;
-                        sendData('handFinished', { winner: card.player });
+                        gameState.winnerOfHand = card.player;
+                        //gameState.playerToPlay = gameState.winnerOfHand;
                     }
                 }
                 if (wizardWasPlayed == false) {
-                    // print(card);
-                    var max = gameState.cardsPlayed[0].number;
-                    print(gameState.cardsPlayed[0].number);
-                    for (var i = 1; i < gameState.cardsPlayed.length; i++) {
-                        print(gameState.cardsPlayed[i].number);
-                        if (gameState.cardsPlayed[i].number > max) {
-                            max = gameState.cardsPlayed[i].number;
-                        }
+                    var trumpsPlayed = [];
+                    for (var i = 0; i < gameState.cardsPlayed.length; i++) {
+                        if (gameState.cardsPlayed[i].suit == gameState.cardData.trump.suit)
+                            trumpsPlayed.push(gameState.cardsPlayed[i]);
+                    }
+
+                    var bestCard;
+                    if (trumpsPlayed.length > 0) {
+                        bestCard = getHighestCard(trumpsPlayed);
+                        print("Highest trump:", bestCard);
+                    } else {
+                        bestCard = getHighestCard(gameState.cardsPlayed);
+                        print("Highest suit:", bestCard);
                     }
 
                     for (card of gameState.cardsPlayed) {
-                        if (card.number == max) {
+                        if (card == bestCard) {
+                            //setTimeout(function() {
                             print("Player " + card.player + " has won this hand");
                             gameState.players[card.player].handsWon++;
                             gameState.cardsPlayedInCurrentHand = 0;
-                            gameState.playerToPlay = card.player;
-                            gameState.cardsPlayed = [];
-                            sendData('handFinished', { winner: card.player });
+                            //gameState.cardsPlayed = [];
+                            gameState.winnerOfHand = card.player;
+                            //gameState.playerToPlay = gameState.winnerOfHand;
+                            //}, 2000);
+
                         }
                     }
                 }
@@ -206,4 +215,19 @@ function onReceiveData(data) {
         sendData("gameState", gameState);
         //print(gameState);
     }
+}
+
+function getHighestCard(cards) {
+    var max = cards[0].number;
+    var topCard = cards[0];
+    print(cards[0].number);
+    for (var i = 1; i < cards.length; i++) {
+        print(cards[i].number);
+        if (cards[i].number > max) {
+            max = cards[i].number;
+            topCard = cards[i];
+        }
+    }
+
+    return topCard;
 }

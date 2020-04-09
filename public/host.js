@@ -45,6 +45,7 @@ function setup() {
         score: null,
         cardData: null,
         dealer: 0,
+        round: 1,
         currentBidder: 0,
         winnerOfHand: -1,
         playerToPlay: 1,
@@ -103,8 +104,8 @@ function onClientConnect(data) {
     });
 
     if (gameState.players.length == numberOfPlayers) {
-        hands = new Cards();
-        hands.deal(3, gameState.players.length);
+        var hands = new Cards();
+        hands.deal(gameState.round, gameState.players.length);
         gameState.cardData = hands;
         gameState.currentBidder = currentBidder;
         currentBidder++;
@@ -149,7 +150,6 @@ function onReceiveData(data) {
 
             //check bidding has finished
             if (currentBidder == gameState.players.length) {
-                gameState.playerToPlay = gameState.dealer + 1;
                 gameState.state = 'playing';
                 currentBidder = -10;
                 gameState.dealer++;
@@ -158,10 +158,7 @@ function onReceiveData(data) {
         }
         //game is in progress...
         else if (gameState.state == 'playing') {
-            // print("CurrentPlayer ", gameState.playerToPlay);
-            //gameState.playerToPlay = (gameState.playerToPlay < gameState.players.length - 1 ? gameState.playerToPlay + 1 : 0);
-            // print("Hands played========");
-            // console.log(gameState.cardsPlayedInCurrentHand);
+
             if (gameState.cardsPlayedInCurrentHand == gameState.players.length) {
 
                 var wizardWasPlayed = false;
@@ -173,9 +170,7 @@ function onReceiveData(data) {
                         print("Player " + card.player + " has won this hand");
                         gameState.players[card.player].handsWon++;
                         wizardWasPlayed = true;
-                        gameState.cardsPlayedInCurrentHand = 0;
                         gameState.winnerOfHand = card.player;
-                        //gameState.playerToPlay = gameState.winnerOfHand;
                     }
                 }
                 if (wizardWasPlayed == false) {
@@ -199,12 +194,7 @@ function onReceiveData(data) {
                             //setTimeout(function() {
                             print("Player " + card.player + " has won this hand");
                             gameState.players[card.player].handsWon++;
-                            gameState.cardsPlayedInCurrentHand = 0;
-                            //gameState.cardsPlayed = [];
                             gameState.winnerOfHand = card.player;
-                            //gameState.playerToPlay = gameState.winnerOfHand;
-                            //}, 2000);
-
                         }
                     }
                 }

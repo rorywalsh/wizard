@@ -229,7 +229,7 @@ function mousePressed() {
                         if (playerDetails.number == i) {
                             for (card of player[i]) {
                                 print("Card:", card);
-                                if (card.number == tempCard.number) {
+                                if (card.number == tempCard.number && card.suit == tempCard.suit) {
                                     card.shouldDisplay = false;
                                     i = gameState.cardData.hands.length + 10;
                                 }

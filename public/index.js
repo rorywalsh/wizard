@@ -13,8 +13,7 @@ let trumpCard;
 let plusButton, minusButton, bidButton;
 let bidValue = 0;
 let cardsInRound = 0;
-let displayBiddingText = false;
-let displayYourTurnText = false;
+let startNextRound = false;
 let numberOfPlayers = 0;
 let gameState;
 let firstTimeConnection = true;
@@ -64,7 +63,7 @@ function draw() {
         textAlign(CENTER);
         for (var i = 0; i < gameState.players.length; i++) {
             text(
-                "[Player " + gameState.players[i].number + "] [Bid:" + (gameState.players[i].bid > -1 ? gameState.players[i].bid : '-') + "] [Hands Won:" + gameState.players[i].handsWon + "] [Score:" + gameState.players[i].score + ']',
+                "[Player " + gameState.players[i].number + "] [Bid:" + (gameState.players[i].bid > -1 ? gameState.players[i].bid : '-') + "] [Hands Won:" + gameState.players[i].handsWon + "] [Score:" + gameState.players[i].score,
                 1300,
                 400 + 60 * i
             );
@@ -88,20 +87,33 @@ function drawMessageText(x, y, message) {
 function onReceiveData(incomingGameState) {
 
     if (incomingGameState.type == "gameState") {
-        print(gameState);
+        // print(gameState);
         gameState = incomingGameState;
 
         if (gameState.winnerOfHand != -1) {
             var winner = gameState.winnerOfHand;
             infoMessage = "Player " + gameState.winnerOfHand + " won that hand";
-            setTimeout(function() {
-                gameState.playerToPlay = winner;
-                gameState.cardsPlayedInCurrentHand = 0;
-                gameState.winnerOfHand = -1;
-                gameState.cardsPlayed = [];
-                infoMessage = "";
-                sendData("gameState", gameState);
-            }, 3000);
+            gameState.winnerOfHand = -1;
+            gameState.playerToPlay = winner;
+            print("Incrementing tricks");
+            gameState.tricksPlayed++;
+            gameState.cardsPlayedInCurrentHand = 0;
+            gameState.cardsPlayed = [];
+            // infoMessage = "";
+            print("Hand won:TricksPlayed", gameState.tricksPlayed);
+            print("Hand won:Round number", gameState.round);
+            if (gameState.tricksPlayed == gameState.round)
+                playNextRound();
+
+            sendData("gameState", gameState);
+
+            // setTimeout(function() {
+            //     infoMessage = '';
+            // }, 3000);
+
+        } else {
+            print("TricksPlayed", gameState.tricksPlayed);
+            print("Round number", gameState.round);
         }
 
         numberOfPlayers = gameState.players.length;
@@ -114,11 +126,12 @@ function onReceiveData(incomingGameState) {
             firstTimeConnection = false;
         }
 
-        print("Player to play: ", gameState.playerToPlay);
-        print("Player number: ", playerDetails.number);
+        // print("Player to play: ", gameState.playerToPlay);
+        // print("Player number: ", playerDetails.number);
 
         if (playerDetails.number == gameState.currentBidder && gameState.state == 'bidding') {
             infoMessage = "Please bid";
+            bidValue = 0;
         }
 
         if (playerDetails.number == gameState.playerToPlay && gameState.state == 'playing') {
@@ -156,7 +169,7 @@ function onReceiveData(incomingGameState) {
             }
 
 
-            print('currentCards', currentCards);
+            //print('currentCards', currentCards);
 
             plusButton = new Button(400, 400, 100, 100, "+", gameState.cardData.trump.suit);
             minusButton = new Button(500, 400, 100, 100, "-", gameState.cardData.trump.suit);
@@ -182,38 +195,56 @@ function onReceiveData(incomingGameState) {
             }
         }
 
-        //check for round over
-        var roundOver = true;
-        for (var i = 0; i <= gameState.cardData.hands.length; i++) {
-            for (player of gameState.cardData.hands) {
-                for (card of player[i]) {
-                    print(playerDetails.number, card);
-                    if (card.shouldDisplay == true) {
-                        roundOver = false;
-                        i = 10000;
-                    }
-                }
-            }
-        }
-
-        if (roundOver) {
-            var currentDealer = gameState.dealer;
-            gameState.currentBidder = currentDealer + 1;
-            gameState.round++;
-            gameState.state = 'bidding';
-            var hands = new Cards();
-            hands.deal(gameState.round, gameState.players.length);
-            gameState.cardData = hands;
-            print('===== GAME STATE ===========');
-            print(gameState);
-            sendData("gameState", gameState);
-        }
-
+        // //check for round over
+        // var roundOver = false;
+        // for (var i = 0; i <= gameState.cardData.hands.length; i++) {
+        //     for (player of gameState.cardData.hands) {
+        //         for (card of player[i]) {
+        //             //print(playerDetails.number, card);
+        //             if (card.shouldDisplay == true) {
+        //                 roundOver = false;
+        //                 i = 10000;
+        //             }
+        //         }
+        //     }
+        // }
 
     }
 }
 
+function playNextRound() {
+    var currentDealer = gameState.dealer;
+    gameState.currentBidder = (currentDealer + 1 > gameState.players.length - 1 ? 0 : currentDealer + 1);
+    gameState.round++;
 
+    for (player of gameState.players) {
+        print("player:" + player.number + " bid:" + player.bid + " handsWon:" + player.handsWon);
+        if (player.bid == player.handsWon)
+            player.score += (20 + player.handsWon * 10);
+        else
+            player.score = player.score - (abs(player.bid - player.handsWon) * 10);
+    }
+
+    for (player of gameState.players) {
+        player.handsWon = 0;
+    }
+
+
+    gameState.tricksPlayed = 0;
+    gameState.state = 'bidding';
+    gameState.numberOfBids = 0;
+    gameState.handsPlayed = 0;
+    gameState.dealer = (currentDealer < gameState.players.length ? currentDealer + 1 : 0);
+    var currentBidder = gameState.currentBidder;
+    gameState.playerToPlay = currentBidder;
+    print("Player to start next round is", gameState.playerToPlay);
+    gameState.cardsPlayedInCurrentHand = 0;
+    var hands = new Cards();
+    hands.deal(gameState.round, gameState.players.length);
+    gameState.cardData = hands;
+    print('===== GAME STATE ===========');
+    print(gameState);
+}
 /////////////////////
 // mousePressed
 /////////////////////
@@ -237,19 +268,20 @@ function mousePressed() {
             var noSuitedCard = true;
             if (gameState.cardsPlayed.length) {
                 for (card of currentCards) {
-                    print(card.suit, gameState.cardsPlayed[0].suit);
+                    // print(card.suit, gameState.cardsPlayed[0].suit);
                     if (card.suit == gameState.cardsPlayed[0].suit && card.shouldDisplay) {
                         noSuitedCard = false;
-                        print("found a suit");
+                        // print("found a suit");
                     }
                 }
             }
 
             if (gameState.cardsPlayed.length == 0 || gameState.cardsPlayed[0].suit == tempCard.suit || tempCard.number == 'w' || noSuitedCard) {
                 gameState.cardsPlayed.push({ player: playerDetails.number, suit: tempCard.suit, number: tempCard.number });
+                //cardsPlayed.push(new Card(10 + xPos * 110, 50, 100, 200, cardPlayed.suit, cardPlayed.number, "[P " + cardPlayed.player + "]"));
                 infoMessage = '';
                 gameState.cardsPlayedInCurrentHand++;
-                print(gameState.cardData.hands[0]);
+                // print(gameState.cardData.hands[0]);
 
                 for (var i = 0; i <= gameState.cardData.hands.length + 1; i++) {
                     for (player of gameState.cardData.hands) {
@@ -263,8 +295,8 @@ function mousePressed() {
                         }
                     }
                 }
-
-                gameState.playerToPlay = (gameState.playerToPlay < gameState.players.length - 1 ? gameState.playerToPlay + 1 : 0);
+                print("Just incrememted player to play");
+                gameState.playerToPlay = (gameState.playerToPlay == gameState.players.length - 1 ? 0 : gameState.playerToPlay + 1);
                 sendData("gameState", gameState);
             } else
                 infoMessage = 'You must follow suit..';
@@ -272,7 +304,7 @@ function mousePressed() {
     }
 
     if (plusButton.hitTest() == true) {
-        bidValue = bidValue < cardsInRound ? bidValue + 1 : cardsInRound;
+        bidValue = bidValue < gameState.round ? bidValue + 1 : bidValue;
         bidButton.text = "Bid:" + bidValue.toString();
     }
     if (minusButton.hitTest() == true) {
@@ -285,6 +317,9 @@ function mousePressed() {
             for (player of gameState.players) {
                 if (player.id == id) {
                     player.bid = bidValue;
+                    gameState.numberOfBids++;
+                    gameState.currentBidder = (gameState.currentBidder == gameState.players.length - 1 ? 0 : gameState.currentBidder + 1);
+
                 }
             }
             // print(gameState);

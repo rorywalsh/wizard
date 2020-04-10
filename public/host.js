@@ -22,11 +22,9 @@ const local = true; // true if running locally, false
 
 let hands;
 let plusPlayers, minusPlayers;
-let numberOfPlayers = 0;
+let numberOfPlayers = 3;
 let createLink;
 let linkCreated = false;
-let currentBidder = 0;
-
 let gameState;
 
 function preload() {
@@ -42,15 +40,16 @@ function setup() {
     gameState = {
         players: [],
         currentCards: [],
-        score: null,
+        score: 0,
         cardData: null,
         dealer: 0,
         round: 1,
         currentBidder: 0,
+        numberOfBids: 0,
         winnerOfHand: -1,
-        playerToPlay: 1,
+        playerToPlay: 0,
         cardsPlayedInCurrentHand: 0,
-        handsPlayed: 0,
+        tricksPlayed: 0,
         cardsPlayed: [],
         state: 'dealing'
     };
@@ -89,9 +88,17 @@ function draw() {
     if (isHostConnected((display = true))) {}
 }
 
-function onClientConnect(data) {
-    //console.log(data.id + " has connected.");
+function startNewRound() {
+    hands = new Cards();
+    hands.deal(gameState.round, gameState.players.length);
+    gameState.cardData = hands;
+    gameState.state = 'bidding';
+    sendData("gameState", gameState);
+}
 
+function onClientConnect(data) {
+
+    //push each newly logged on player to gameState
     gameState.players.push({
         id: data.id,
         number: gameState.players.length,
@@ -100,18 +107,14 @@ function onClientConnect(data) {
         handsWon: 0,
         score: 0,
         currentCard: { suit: '', value: -1 }
-
     });
 
+    // once all players have logged on, start new round...
     if (gameState.players.length == numberOfPlayers) {
-        var hands = new Cards();
-        hands.deal(gameState.round, gameState.players.length);
-        gameState.cardData = hands;
-        gameState.currentBidder = currentBidder;
-        currentBidder++;
-        gameState.state = 'bidding';
-        sendData("gameState", gameState);
-        // print(gameState);
+        setTimeout(function() {
+            startNewRound();
+        }, 1000)
+
     }
 }
 
@@ -146,15 +149,17 @@ function onReceiveData(data) {
 
         //game is still in bidding process
         if (gameState.state == 'bidding') {
-            gameState.currentBidder = currentBidder;
-
+            print("CurrentBidder", gameState.currentBidder);
             //check bidding has finished
-            if (currentBidder == gameState.players.length) {
+            if (gameState.numberOfBids == gameState.players.length) {
                 gameState.state = 'playing';
-                currentBidder = -10;
-                gameState.dealer++;
+                //gameState.playerToPlay = (gameState.currentDealer < gameState.players.length ? gameState.currentDealer + 1 : 0);
+                print("======== Playing state ========");
+                print("Player to play:", gameState.playerToPlay);
+                //currentBidder = -10;
+                //gameState.dealer++;
             }
-            currentBidder++;
+            //currentBidder++;
         }
         //game is in progress...
         else if (gameState.state == 'playing') {

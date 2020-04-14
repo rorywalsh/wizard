@@ -4,7 +4,7 @@ class Cards {
         this.hands = [];
 
         this.trump = ';'
-        this.suits = ['red', 'blue', 'green', 'yellow'];
+        this.suits = ['red', 'blue', 'green', 'orange'];
         for (var i = 0; i < 13; i++) {
             for (var suit = 0; suit < 4; suit++) {
                 this.cards.push({ suit: this.suits[suit], number: i, shouldDisplay: true });
@@ -12,7 +12,7 @@ class Cards {
         }
 
         for (var suit = 0; suit < 4; suit++) {
-            this.cards.push({ suit: this.suits[suit], number: 'w', shouldDisplay: true });
+            this.cards.push({ suit: this.suits[suit], number: 'W', shouldDisplay: true });
         }
 
         // for (var i = 0; i < this.cards.length; i++)

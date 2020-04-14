@@ -5,6 +5,9 @@ const serverIp = "127.0.0.1";
 const serverPort = "3000";
 const local = true; // true if running locally, false
 // if running on remote server
+// const serverIp = 'https://rorywalsh-wizard.glitch.me';
+// const serverPort = "3000";
+// const local = false; // true if running locally, false
 
 let playerDetails;
 let currentCards = [];
@@ -17,59 +20,119 @@ let startNextRound = false;
 let numberOfPlayers = 0;
 let gameState;
 let firstTimeConnection = true;
-let infoMessage = '';
+let leaderBoard = null;
+let infoMessage = "";
+let nameField;
+let submitButton;
+let infoDisplay;
 
 function preload() {
     setupClient();
     noLoop();
-    setInterval(draw, 0.1);
+    //setInterval(draw, 0.1);
 }
 
 function setup() {
     createCanvas(windowWidth, windowHeight);
+    console.log(windowWidth, windowHeight);
+    textFont("Courier New Bold");
+    infoDisplay = new InfoDisplay("", color(40, 40, 40), color(0), color(255));
+    loop();
+    plusButton = new Button("plusButton", "+", color(0, 200, 0), color(40, 40, 40), color(0, 0, 0), color(0, 155, 0));
+    minusButton = new Button("minusButton", "-", color(0, 200, 0), color(40, 40, 40), color(0, 0, 0), color(0, 155, 0));
+    bidButton = new Button("bidButton", "Bid:0", color(255, 0, 0), color(40, 40, 40), color(0, 0, 0), color(255, 100, 0));
 }
 
 function windowResized() {
     resizeCanvas(windowWidth, windowHeight);
+    console.log(windowWidth, windowHeight);
 }
 
 function draw() {
-    // print("Drawing");
-    background(0);
+    // console.log("Drawing");
+    background(255);
+    fill(0);
+    stroke(0);
+    strokeWeight(1);
+    var yPos = 0,
+        xPos = 0;
 
-    textAlign(LEFT);
-    textSize(30);
     if (playerDetails)
-        text("Player " + playerDetails.number, 140, 900);
+        text("Player " + playerDetails.number, windowWidth * 0.05, windowHeight - windowHeight * .05);
 
     for (card of currentCards) {
-        card.display();
+        card.display(
+            (xPos += windowWidth * 0.05),
+            windowHeight * 0.55,
+            windowWidth * 0.125,
+            windowHeight * 0.35
+        );
     }
+
+    xPos = windowWidth * 0.15;
     for (card of cardsPlayed) {
-        card.display();
+        card.display(
+            (xPos += windowWidth * 0.05),
+            windowHeight * 0.05,
+            windowWidth * 0.125,
+            windowHeight * 0.35
+        );
     }
 
-    if (trumpCard) trumpCard.display();
-    if (plusButton) plusButton.display();
-    if (minusButton) minusButton.display();
-    if (bidButton) bidButton.display();
+    if (trumpCard) {
+        trumpCard.display(
+            windowWidth * 0.05,
+            windowHeight * 0.05,
+            windowWidth * 0.125,
+            windowHeight * 0.35
+        );
 
-    if (infoMessage.length > 0)
-        drawMessageText(600, 650, infoMessage);
+        plusButton.display(
+            windowWidth * 0.775,
+            windowHeight * 0.8,
+            windowWidth * 0.05
+        );
 
-    if (gameState) {
-        fill(255);
-        textSize(52);
-        textAlign(CENTER);
-        for (var i = 0; i < gameState.players.length; i++) {
-            text(
-                "[Player " + gameState.players[i].number + "] [Bid:" + (gameState.players[i].bid > -1 ? gameState.players[i].bid : '-') + "] [Hands Won:" + gameState.players[i].handsWon + "] [Score:" + gameState.players[i].score,
-                1300,
-                400 + 60 * i
-            );
+        minusButton.display(
+            windowWidth * 0.925,
+            windowHeight * 0.8,
+            windowWidth * 0.05
+        );
+
+        bidButton.display(
+            windowWidth * 0.85,
+            windowHeight * 0.65,
+            windowWidth * 0.1
+        );
+    }
+
+    if (bidButton) {
+        if (infoDisplay.text.length > 0) {
+            if (infoDisplay.text.includes('Please bid')) {
+                bidButton.focus = true;
+                plusButton.focus = true;
+                minusButton.focus = true;
+            } else {
+                bidButton.focus = false;
+                plusButton.focus = false;
+                minusButton.focus = false;
+                bidButton.text = 'Done';
+            }
         }
     }
 
+    if (gameState) {
+        leaderBoard.display(
+            windowWidth * 0.55,
+            windowHeight * 0.1,
+            windowWidth * 0.4,
+            windowHeight * 0.25
+        );
+
+    }
+
+    if (infoDisplay.text != '')
+        infoDisplay.display(windowWidth * .3, windowHeight * .45, windowWidth * .4, windowHeight * .08);
     if (isClientConnected((display = true))) {}
 }
 
@@ -80,62 +143,105 @@ function drawMessageText(x, y, message) {
     text(message, x, y);
 }
 
+
+
+function createNameInputField() {
+    nameField = createInput('Player ' + playerDetails.number + ': Click to change name');
+    nameField.style('font-size', '21px');
+    nameField.position(windowWidth * .74, windowHeight * .9);
+    nameField.size(windowWidth * .15, windowHeight * .05);
+    nameField.mousePressed(nameFieldPressed);
+    submitButton = createButton('Submit');
+    submitButton.style('font-size', '24px');
+    submitButton.position(windowWidth * .9, windowHeight * .9);
+    submitButton.size(windowWidth * .05, windowHeight * .055);
+    submitButton.mousePressed(submitButtonPressed);
+}
+
+function submitButtonPressed() {
+    for (player of gameState.players) {
+        if (player.id == playerDetails.id) {
+            player.name = nameField.value();
+        }
+    }
+    sendData("gameState", gameState);
+}
+
+function nameFieldPressed() {
+    nameField.value('');
+}
+
 ////////////////////////////////////////
 // onReceiveData
-// NOTE TO SELF: This is triggered for every instance of this script when the host outputs something....
 ////////////////////////////////////////
 function onReceiveData(incomingGameState) {
-
     if (incomingGameState.type == "gameState") {
-        // print(gameState);
         gameState = incomingGameState;
+        if (leaderBoard)
+            leaderBoard.players = gameState.players;
 
-        if (gameState.winnerOfHand != -1) {
+
+        if (gameState.winnerOfHand != -1 && gameState.state == 'playing') {
             var winner = gameState.winnerOfHand;
-            infoMessage = "Player " + gameState.winnerOfHand + " won that hand";
-            gameState.winnerOfHand = -1;
+            infoDisplay.text = "Player " + gameState.winnerOfHand + " won the hand";
+
             gameState.playerToPlay = winner;
-            print("Incrementing tricks");
+            console.log("Incrementing tricks");
             gameState.tricksPlayed++;
-            gameState.cardsPlayedInCurrentHand = 0;
-            gameState.cardsPlayed = [];
-            // infoMessage = "";
-            print("Hand won:TricksPlayed", gameState.tricksPlayed);
-            print("Hand won:Round number", gameState.round);
-            if (gameState.tricksPlayed == gameState.round)
-                playNextRound();
+            gameState.state = 'summary';
+            console.log("Hand won:TricksPlayed", gameState.tricksPlayed);
+            console.log("Hand won:Round number", gameState.round);
 
-            sendData("gameState", gameState);
-
-            // setTimeout(function() {
-            //     infoMessage = '';
-            // }, 3000);
-
+            if (gameState.winnerOfHand == playerDetails.number) {
+                if (gameState.tricksPlayed == gameState.round) {
+                    setTimeout(function() {
+                        console.log("Starting next round");
+                        playNextRound();
+                        sendData("gameState", gameState);
+                    }, 3000);
+                } else {
+                    setTimeout(function() {
+                        console.log("Starting next hand");
+                        gameState.cardsPlayedInCurrentHand = 0;
+                        gameState.cardsPlayed = [];
+                        gameState.state = 'playing';
+                        sendData("gameState", gameState);
+                    }, 3000);
+                }
+            }
+            gameState.winnerOfHand = -1;
+            // 
         } else {
-            print("TricksPlayed", gameState.tricksPlayed);
-            print("Round number", gameState.round);
+            // console.log("TricksPlayed", gameState.tricksPlayed);
+            // console.log("Round number", gameState.round);
         }
 
         numberOfPlayers = gameState.players.length;
         if (firstTimeConnection) {
             for (player of gameState.players) {
                 if (player.id == id) {
-                    playerDetails = { id: id, number: player.number };
+                    playerDetails = { id: id, number: player.number, name: '' };
                 }
             }
             firstTimeConnection = false;
         }
 
-        // print("Player to play: ", gameState.playerToPlay);
-        // print("Player number: ", playerDetails.number);
-
-        if (playerDetails.number == gameState.currentBidder && gameState.state == 'bidding') {
-            infoMessage = "Please bid";
-            bidValue = 0;
-        }
-
-        if (playerDetails.number == gameState.playerToPlay && gameState.state == 'playing') {
-            infoMessage = 'Please select a card';
+        // console.log("Player to play: ", gameState.playerToPlay);
+        // console.log("Player number: ", playerDetails.number);
+        if (gameState.state == "bidding") {
+            if (playerDetails.number == gameState.currentBidder) {
+                infoDisplay.text = "Please bid.";
+                bidButton.text = 'Bid:0';
+            } else {
+                infoDisplay.text = "Please wait.";
+            }
+        } else if (gameState.state == "playing") {
+            console.log("status:playing");
+            if (playerDetails.number == gameState.playerToPlay) {
+                infoDisplay.text = "Please select a card.";
+            } else {
+                infoDisplay.text = "Please wait.";
+            }
         }
 
         var xPos = 100;
@@ -143,114 +249,119 @@ function onReceiveData(incomingGameState) {
         if (gameState.cardData) {
             currentCards = [];
             playedCards = [];
-            //print(data.deck.hands);
+            //console.log(data.deck.hands);
             for (var i = 0; i <= gameState.cardData.hands.length + 1; i++) {
                 for (player of gameState.cardData.hands) {
                     if (playerDetails.number == i) {
                         for (card of player[i]) {
                             cardsInRound++;
-                            // print(card);
-                            currentCards.push(
-                                new Card(
-                                    xPos + 300,
-                                    700,
-                                    100,
-                                    200,
-                                    card.suit,
-                                    card.number,
-                                    '',
-                                    card.shouldDisplay
-                                )
-                            );
+                            // console.log(card);
+                            if (card.shouldDisplay)
+                                currentCards.push(
+                                    new Card(
+                                        xPos + 300,
+                                        700,
+                                        100,
+                                        200,
+                                        card.suit,
+                                        card.number,
+                                        "",
+                                        card.shouldDisplay
+                                    )
+                                );
                             xPos += 110;
                         }
                     }
                 }
             }
 
+            //console.log('currentCards', currentCards);
+            if (!leaderBoard)
+                leaderBoard = new LeaderBoard(gameState.players);
 
-            //print('currentCards', currentCards);
+            if (!nameField) {
+                createNameInputField();
+            }
 
-            plusButton = new Button(400, 400, 100, 100, "+", gameState.cardData.trump.suit);
-            minusButton = new Button(500, 400, 100, 100, "-", gameState.cardData.trump.suit);
-            bidButton = new Button(
-                400,
-                500,
-                200,
-                100,
-                "Bid:0",
-                gameState.cardData.trump.suit
+            trumpCard = new Card(
+                0,
+                0,
+                0,
+                0,
+                gameState.cardData.trump.suit,
+                "Trump"
             );
-
-            trumpCard = new Card(120, 400, 200, 400, gameState.cardData.trump.suit, "Trump");
-
         }
 
         if (gameState.cardsPlayed) {
             cardsPlayed = [];
             var xPos = 0;
             for (cardPlayed of gameState.cardsPlayed) {
-                cardsPlayed.push(new Card(10 + xPos * 110, 50, 100, 200, cardPlayed.suit, cardPlayed.number, "[P " + cardPlayed.player + "]"));
+                cardsPlayed.push(
+                    new Card(
+                        10 + xPos * 110,
+                        50,
+                        100,
+                        200,
+                        cardPlayed.suit,
+                        cardPlayed.number,
+                        "[P " + cardPlayed.player + "]"
+                    )
+                );
                 xPos++;
             }
         }
-
-        // //check for round over
-        // var roundOver = false;
-        // for (var i = 0; i <= gameState.cardData.hands.length; i++) {
-        //     for (player of gameState.cardData.hands) {
-        //         for (card of player[i]) {
-        //             //print(playerDetails.number, card);
-        //             if (card.shouldDisplay == true) {
-        //                 roundOver = false;
-        //                 i = 10000;
-        //             }
-        //         }
-        //     }
-        // }
-
     }
 }
 
 function playNextRound() {
     var currentDealer = gameState.dealer;
-    gameState.currentBidder = (currentDealer + 1 > gameState.players.length - 1 ? 0 : currentDealer + 1);
+    gameState.cardsPlayedInCurrentHand = 0;
+    gameState.cardsPlayed = [];
+    gameState.currentBidder =
+        currentDealer + 1 > gameState.players.length - 1 ?
+        0 :
+        currentDealer + 1;
+
     gameState.round++;
+    console.log("playNextRound");
 
     for (player of gameState.players) {
-        print("player:" + player.number + " bid:" + player.bid + " handsWon:" + player.handsWon);
         if (player.bid == player.handsWon)
-            player.score += (20 + player.handsWon * 10);
+            player.score += 20 + player.handsWon * 10;
         else
-            player.score = player.score - (abs(player.bid - player.handsWon) * 10);
+            player.score =
+            player.score - abs(player.bid - player.handsWon) * 10;
     }
 
     for (player of gameState.players) {
         player.handsWon = 0;
     }
 
-
     gameState.tricksPlayed = 0;
-    gameState.state = 'bidding';
+    gameState.state = "bidding";
     gameState.numberOfBids = 0;
     gameState.handsPlayed = 0;
-    gameState.dealer = (currentDealer < gameState.players.length ? currentDealer + 1 : 0);
+    gameState.dealer =
+        currentDealer < gameState.players.length ? currentDealer + 1 : 0;
     var currentBidder = gameState.currentBidder;
     gameState.playerToPlay = currentBidder;
-    print("Player to start next round is", gameState.playerToPlay);
+    console.log("Player to start next round is", gameState.playerToPlay);
     gameState.cardsPlayedInCurrentHand = 0;
     var hands = new Cards();
     hands.deal(gameState.round, gameState.players.length);
     gameState.cardData = hands;
-    print('===== GAME STATE ===========');
-    print(gameState);
+    // console.log("===== GAME STATE ===========");
+    console.log(gameState);
 }
 /////////////////////
 // mousePressed
 /////////////////////
 function mousePressed() {
-    var tempCard, wasHit = false;
-    if (playerDetails.number == gameState.playerToPlay && gameState.state == 'playing') {
+    var tempCard,
+        wasHit = false;
+    if (playerDetails.number == gameState.playerToPlay &&
+        gameState.state == "playing") {
         for (card of currentCards) {
             if (card.hitTest()) {
                 wasHit = true;
@@ -258,9 +369,9 @@ function mousePressed() {
                     if (player.id == id) {
                         player.currentCard = card;
                         tempCard = card;
+                        console.log(tempCard);
                     }
                 }
-
             }
         }
 
@@ -268,26 +379,39 @@ function mousePressed() {
             var noSuitedCard = true;
             if (gameState.cardsPlayed.length) {
                 for (card of currentCards) {
-                    // print(card.suit, gameState.cardsPlayed[0].suit);
-                    if (card.suit == gameState.cardsPlayed[0].suit && card.shouldDisplay) {
+                    // console.log(card.suit, gameState.cardsPlayed[0].suit);
+                    if (
+                        card.suit == gameState.cardsPlayed[0].suit &&
+                        card.shouldDisplay
+                    ) {
                         noSuitedCard = false;
-                        // print("found a suit");
                     }
                 }
             }
 
-            if (gameState.cardsPlayed.length == 0 || gameState.cardsPlayed[0].suit == tempCard.suit || tempCard.number == 'w' || noSuitedCard) {
-                gameState.cardsPlayed.push({ player: playerDetails.number, suit: tempCard.suit, number: tempCard.number });
+            if (gameState.cardsPlayed.length == 0 ||
+                gameState.cardsPlayed[0].suit == tempCard.suit ||
+                tempCard.number == "W" ||
+                tempCard.number == 0 ||
+                noSuitedCard) {
+                gameState.cardsPlayed.push({
+                    player: playerDetails.number,
+                    suit: tempCard.suit,
+                    number: tempCard.number,
+                });
                 //cardsPlayed.push(new Card(10 + xPos * 110, 50, 100, 200, cardPlayed.suit, cardPlayed.number, "[P " + cardPlayed.player + "]"));
-                infoMessage = '';
+                infoMessage = "";
                 gameState.cardsPlayedInCurrentHand++;
-                // print(gameState.cardData.hands[0]);
+                // console.log(gameState.cardData.hands[0]);
 
                 for (var i = 0; i <= gameState.cardData.hands.length + 1; i++) {
                     for (player of gameState.cardData.hands) {
                         if (playerDetails.number == i) {
                             for (card of player[i]) {
-                                if (card.number == tempCard.number && card.suit == tempCard.suit) {
+                                if (
+                                    card.number == tempCard.number &&
+                                    card.suit == tempCard.suit
+                                ) {
                                     card.shouldDisplay = false;
                                     i = gameState.cardData.hands.length + 10;
                                 }
@@ -295,11 +419,14 @@ function mousePressed() {
                         }
                     }
                 }
-                print("Just incrememted player to play");
-                gameState.playerToPlay = (gameState.playerToPlay == gameState.players.length - 1 ? 0 : gameState.playerToPlay + 1);
+                console.log("Just incrememted player to play");
+                gameState.playerToPlay =
+                    gameState.playerToPlay == gameState.players.length - 1 ?
+                    0 :
+                    gameState.playerToPlay + 1;
                 sendData("gameState", gameState);
             } else
-                infoMessage = 'You must follow suit..';
+                infoDisplay.text = "You must follow suit..";
         }
     }
 
@@ -313,22 +440,25 @@ function mousePressed() {
     }
     if (playerDetails.number == gameState.currentBidder) {
         if (bidButton.hitTest() == true) {
-            infoMessage = '';
+            infoMessage = "";
             for (player of gameState.players) {
                 if (player.id == id) {
                     player.bid = bidValue;
                     gameState.numberOfBids++;
-                    gameState.currentBidder = (gameState.currentBidder == gameState.players.length - 1 ? 0 : gameState.currentBidder + 1);
-
+                    gameState.currentBidder =
+                        gameState.currentBidder == gameState.players.length - 1 ?
+                        0 :
+                        gameState.currentBidder + 1;
                 }
             }
-            // print(gameState);
+            // console.log(gameState);
 
             sendData("gameState", gameState);
         }
     }
-}
 
+    //sendData("gameState", gameState);
+}
 
 /// Add these lines below sketch to prevent scrolling on mobile
 function touchMoved() {

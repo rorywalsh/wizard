@@ -19,6 +19,9 @@ const serverIp = "127.0.0.1";
 const serverPort = "3000";
 const local = true; // true if running locally, false
 // if running on remote server
+// const serverIp = 'https://rorywalsh-wizard.glitch.me';
+// const serverPort = "3000";
+// const local = false; // true if running locally, false
 
 let hands;
 let plusPlayers, minusPlayers;
@@ -33,9 +36,9 @@ function preload() {
 
 function setup() {
     createCanvas(windowWidth, windowHeight);
-    plusPlayers = new Button(100, 100, 100, 100, "+", "red");
-    minusPlayers = new Button(200, 100, 100, 100, "-", "red");
-    createLink = new Button(500, 100, 200, 100, "Generate Game Link", "green");
+    //plusPlayers = new Button(100, 100, 100, 100, "+", "red");
+    //minusPlayers = new Button(200, 100, 100, 100, "-", "red");
+    //createLink = new Button(500, 100, 200, 100, "Generate Game Link", "green");
 
     gameState = {
         players: [],
@@ -43,7 +46,7 @@ function setup() {
         score: 0,
         cardData: null,
         dealer: 0,
-        round: 1,
+        round: 4,
         currentBidder: 0,
         numberOfBids: 0,
         winnerOfHand: -1,
@@ -81,9 +84,9 @@ function draw() {
         );
     } else text("Game Status: Unknown", 400, 400);
 
-    plusPlayers.display();
-    minusPlayers.display();
-    createLink.display();
+    // plusPlayers.display();
+    // minusPlayers.display();
+    // createLink.display();
 
     if (isHostConnected((display = true))) {}
 }
@@ -106,6 +109,7 @@ function onClientConnect(data) {
         turn: false,
         handsWon: 0,
         score: 0,
+        name: '',
         currentCard: { suit: '', value: -1 }
     });
 
@@ -156,21 +160,15 @@ function onReceiveData(data) {
                 //gameState.playerToPlay = (gameState.currentDealer < gameState.players.length ? gameState.currentDealer + 1 : 0);
                 print("======== Playing state ========");
                 print("Player to play:", gameState.playerToPlay);
-                //currentBidder = -10;
-                //gameState.dealer++;
             }
-            //currentBidder++;
         }
         //game is in progress...
         else if (gameState.state == 'playing') {
-
             if (gameState.cardsPlayedInCurrentHand == gameState.players.length) {
-
                 var wizardWasPlayed = false;
 
                 //first player to play a wizard wins the hand...
                 for (card of gameState.cardsPlayed) {
-
                     if (card.number == 'w') {
                         print("Player " + card.player + " has won this hand");
                         gameState.players[card.player].handsWon++;

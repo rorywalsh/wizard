@@ -76,7 +76,8 @@ class Card {
                 );
             } else {
                 fill(40);
-                textSize(30);
+                textSize(this.h * .1);
+                // print(this.h * .1);
                 rect(
                     this.x + this.w * 0.1,
                     this.y + this.h - this.h * 0.35,

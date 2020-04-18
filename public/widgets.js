@@ -15,10 +15,6 @@ class Button {
         this.focus = false;
         this.text = text;
         this.incr = 0;
-        // this.x = x;
-        // this.y = y;
-        // this.w = w;
-        // this.h = h;
     }
 
     display(x, y, r) {
@@ -26,7 +22,6 @@ class Button {
         this.y = y;
         this.r = r;
         let a = 0;
-        textSize(30);
         var colour = this.innerColour;
         var resize = 0;
         if (this.focus == true) {
@@ -54,6 +49,7 @@ class Button {
 
         textAlign(CENTER, CENTER);
         ellipseMode(CENTER);
+
         strokeWeight(windowWidth * .005);
         stroke(this.outlineColour);
         if (this.focus == true) {
@@ -71,9 +67,10 @@ class Button {
 
 
         fill(0);
+
         if (this.text != "+" && this.text != "-") {
             fill(255);
-            textSize(60);
+            textSize(this.r * .3);
             textStyle(BOLD);
             strokeWeight(0);
             text(
@@ -84,10 +81,11 @@ class Button {
                 this.r + resize
             );
         } else if (this.text == "+") {
+
             fill(255);
             strokeWeight(0);
             rect(
-                this.x - this.r / 2 + windowWidth * 0.01 + resize * .3,
+                this.x - this.r * .3 + resize * .3,
                 this.y - this.r * .05 + resize * .3,
                 this.r * .6 + resize * .3,
                 this.r * 0.1 + resize * .3
@@ -102,13 +100,13 @@ class Button {
             fill(255);
             strokeWeight(0);
             rect(
-                this.x - this.r / 2 + windowWidth * 0.01 + resize * .3,
+                this.x - this.r * .3 + resize * .3,
                 this.y - this.r * .05 + resize * .3,
                 this.r * .6 + resize * .3,
                 this.r * 0.1 + resize * .3
             );
         }
-        textSize(30);
+
     }
 
     hitTest() {
@@ -118,21 +116,23 @@ class Button {
 
 class LeaderBoard {
     constructor(players) {
-        this.players = players;
+
     }
 
     display(x, y, w, h) {
+        this.players = gameState.players;
         fill(0, 100, 0);
         stroke(40);
+        textSize(w * .05);
 
         strokeWeight(w * 0.01);
         rect(x, y, w, h, h * 0.05);
 
-        //horizontal lines
+        //horizontal line
         line(x, y + h * 0.3, x + w, y + h * 0.3);
 
         //vertical lines
-        for (var i = w / 3; i < w; i += w / 3) {
+        for (var i = w / 4; i < w; i += w / 4) {
             line(x + i, y, x + i, y + h);
         }
 
@@ -144,40 +144,51 @@ class LeaderBoard {
                 x + w,
                 y + h * 0.3 + i * ((h * 0.7) / this.players.length)
             );
-            fill(255);
+            if (gameState.dealer == i)
+                fill('orange');
+            else
+                fill(255);
+
             strokeWeight(2);
             //print(this.players[i].name);
             text(
-                this.players[i].name == '' ? 'Player ' + this.players[i].number : this.players[i].name,
+                this.players[i].name,
                 x,
                 y + h * 0.3 + i * ((h * 0.7) / this.players.length),
-                w / 3,
+                w / 4,
                 (h * 0.7) / this.players.length
             );
             text(
                 this.players[i].bid == -1 ? "-" : this.players[i].bid,
-                x + w / 3,
+                x + w / 4,
                 y + h * 0.3 + (i * (h * 0.7)) / this.players.length,
-                w / 3,
+                w / 4,
+                (h * 0.7) / this.players.length
+            );
+            text(
+                this.players[i].handsWon,
+                x + (w / 4) * 2,
+                y + h * 0.3 + (i * (h * 0.7)) / this.players.length,
+                w / 4,
                 (h * 0.7) / this.players.length
             );
             text(
                 this.players[i].score,
-                x + (w / 3) * 2,
+                x + (w / 4) * 3,
                 y + h * 0.3 + (i * (h * 0.7)) / this.players.length,
-                w / 3,
+                w / 4,
                 (h * 0.7) / this.players.length
             );
         }
 
         fill(255);
-        textSize(h * 0.2);
+        //textSize(h * 0.2);
         strokeWeight(2);
         textAlign(CENTER, CENTER);
-        text("Players", x, y, w / 3, h * 0.3);
-
-        text("Bids", x + w / 3, y, w / 3, h * 0.3);
-        text("Score", x + (w / 3) * 2, y, w / 3, h * 0.3);
+        text("Players", x, y, w / 4, h * 0.3);
+        text("Bids", x + w / 4, y, w / 4, h * 0.3);
+        text("Hands", x + (w / 4) * 2, y, w / 4, h * 0.3);
+        text("Score", x + (w / 4) * 3, y, w / 4, h * 0.3);
     }
 }
 
@@ -187,9 +198,7 @@ class InfoDisplay {
         this.innerColour = innerColour;
         this.outerColour = outerColour;
         this.textColour = textColour;
-        this.numberOfDots = 0;
-        this.maxDots = 0;
-        this.dots = '';
+        this.show = true;
     }
 
     display(x, y, w, h) {
@@ -197,20 +206,25 @@ class InfoDisplay {
         stroke(this.outerColour);
         fill(this.innerColour);
         rect(x, y, w, h, h * .1);
-        textAlign(LEFT);
+        textAlign(CENTER, CENTER);
         fill(this.textColour);
-        text(this.text, x * 1.1, y, w, h);
-        if (!this.text.includes(' won the hand')) {
-            this.maxDots = 24 - this.text.length;
-            if (frameCount % 25 == 0) {
-                this.numberOfDots = (this.numberOfDots < this.maxDots ? this.numberOfDots + 1 : 0)
+        textSize(h * .6);
+        if (frameCount % 30 == 0)
+            this.show = !this.show
 
-                if (this.numberOfDots == 0)
-                    this.text = this.text.substring(0, this.text.indexOf('.'));
+        if (this.show)
+            text(this.text, x, y, w, h);
+        // if (!this.text.includes(' won the hand')) {
+        //     this.maxDots = 24 - this.text.length;
+        //     if (frameCount % 25 == 0) {
+        //         this.numberOfDots = (this.numberOfDots < this.maxDots ? this.numberOfDots + 1 : 0)
 
-                this.text += '.';
-            }
-        }
+        //         if (this.numberOfDots == 0)
+        //             this.text = this.text.substring(0, this.text.indexOf('.'));
+
+        //         this.text += '.';
+        //     }
+        // }
 
     }
 }

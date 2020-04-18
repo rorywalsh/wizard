@@ -25,7 +25,8 @@ const local = true; // true if running locally, false
 
 let hands;
 let plusPlayers, minusPlayers;
-let numberOfPlayers = 3;
+let numberOfPlayers = 2;
+let numberOfCards = 13;
 let createLink;
 let linkCreated = false;
 let gameState;
@@ -36,9 +37,10 @@ function preload() {
 
 function setup() {
     createCanvas(windowWidth, windowHeight);
-    //plusPlayers = new Button(100, 100, 100, 100, "+", "red");
-    //minusPlayers = new Button(200, 100, 100, 100, "-", "red");
-    //createLink = new Button(500, 100, 200, 100, "Generate Game Link", "green");
+    plusPlayers = new Button("plusButton", "+", color(200, 0, 200), color(60, 60, 60), color(0, 0, 0), color(0, 155, 0));
+    minusPlayers = new Button("minusButton", "-", color(200, 0, 200), color(60, 60, 60), color(0, 0, 0), color(0, 155, 0));
+    plusCards = new Button("plusButton", "+", color(200, 0, 200), color(60, 60, 60), color(0, 0, 0), color(0, 155, 0));
+    minusCards = new Button("minusButton", "-", color(200, 0, 200), color(60, 60, 60), color(0, 0, 0), color(0, 155, 0));
 
     gameState = {
         players: [],
@@ -46,7 +48,7 @@ function setup() {
         score: 0,
         cardData: null,
         dealer: 0,
-        round: 4,
+        round: 1,
         currentBidder: 0,
         numberOfBids: 0,
         winnerOfHand: -1,
@@ -60,40 +62,93 @@ function setup() {
 
 function windowResized() {
     resizeCanvas(windowWidth, windowHeight);
+
 }
 
 function draw() {
-    background(15);
-    textSize(32);
-    textAlign(CENTER);
+    background(255);
+    fill(0);
+    textAlign(CENTER, CENTER);
+    textSize(windowWidth * .025);
+    strokeWeight(windowHeight * .01);
+    stroke(80, 80, 80);
+    fill(0, 200, 0);
+    rect(windowWidth * .33, windowHeight * .1, windowWidth * .33, windowHeight * .1, windowHeight * .01)
     fill(255);
-    text("Number of players: " + numberOfPlayers.toString(), 200, 250);
-    if (linkCreated) text(serverIp + "/?=" + roomId, 600, 250);
+    stroke(60);
+    text("Welcome to Wizard!", windowWidth * .33, windowHeight * .1, windowWidth * .33, windowHeight * .1);
+    strokeWeight(0);
+    fill(0);
+    textSize(windowWidth * .015);
+    text("The page should only be loaded by the game coordinator. All subsequent players should navigate to the link shown below.", windowWidth * .33, windowHeight * .25, windowWidth * .33, windowHeight * .15);
 
-    textSize(50);
-    fill("blue");
+    textSize(windowWidth * .018);
+    strokeWeight(windowHeight * .01);
+    stroke(80, 80, 80);
+    fill(0, 200, 0);
+    rect(windowWidth * .32, windowHeight * .452, windowWidth * .35, windowHeight * .09, windowHeight * .01)
+    stroke(60);
+    fill(255);
+    text("Number of players: " + numberOfPlayers.toString(), windowWidth * .33, windowHeight * .45, windowWidth * .35, windowHeight * .1);
+    plusPlayers.display(
+        windowWidth * 0.37,
+        windowHeight * 0.5,
+        windowWidth * 0.05
+    );
+
+    minusPlayers.display(
+        windowWidth * 0.625,
+        windowHeight * 0.5,
+        windowWidth * 0.05
+    );
+
+    textSize(windowWidth * .018);
+    strokeWeight(windowHeight * .01);
+    stroke(80, 80, 80);
+    fill(0, 200, 0);
+    rect(windowWidth * .32, windowHeight * .6, windowWidth * .35, windowHeight * .09, windowHeight * .01)
+    stroke(60);
+    fill(255);
+    text("Number of cards: " + numberOfCards.toString(), windowWidth * .33, windowHeight * .6, windowWidth * .35, windowHeight * .1);
+    plusCards.display(
+        windowWidth * 0.37,
+        windowHeight * 0.645,
+        windowWidth * 0.05
+    );
+
+    minusCards.display(
+        windowWidth * 0.625,
+        windowHeight * 0.645,
+        windowWidth * 0.05
+    );
+
+    strokeWeight(windowHeight * .005);
+    stroke(80, 80, 80);
+    fill(200, 0, 200);
+    rect(windowWidth * .2, windowHeight * .75, windowWidth * .6, windowHeight * .08, windowHeight * .01)
+    fill(255);
+    text("Game Link:  " + serverIp + "/?=" + roomId, windowWidth * .2, windowHeight * .75, windowWidth * .6, windowHeight * .09);
+
+    strokeWeight(windowHeight * .005);
+    stroke(80, 80, 80);
+    fill(0, 200, 0);
+    rect(windowWidth * .32, windowHeight * .86, windowWidth * .35, windowHeight * .06, windowHeight * .008)
     fill(255);
     if (gameState.players.length > 0) {
-        text(
-            "Game Status: " +
+        text("Game Status: " +
             (gameState.players.length == numberOfPlayers ?
                 "In Progress" :
-                "Initiliasing"),
-            400,
-            400
-        );
-    } else text("Game Status: Unknown", 400, 400);
-
-    // plusPlayers.display();
-    // minusPlayers.display();
-    // createLink.display();
+                "Initiliasing"), windowWidth * .32, windowHeight * .85, windowWidth * .35, windowHeight * .09);
+    } else {
+        text("Game Status: Unknown", windowWidth * .32, windowHeight * .85, windowWidth * .35, windowHeight * .09);
+    }
 
     if (isHostConnected((display = true))) {}
 }
 
 function startNewRound() {
     hands = new Cards();
-    hands.deal(gameState.round, gameState.players.length);
+    hands.deal(gameState.round + 7, gameState.players.length);
     gameState.cardData = hands;
     gameState.state = 'bidding';
     sendData("gameState", gameState);
@@ -109,7 +164,7 @@ function onClientConnect(data) {
         turn: false,
         handsWon: 0,
         score: 0,
-        name: '',
+        name: 'Player ' + gameState.players.length,
         currentCard: { suit: '', value: -1 }
     });
 
@@ -122,9 +177,7 @@ function onClientConnect(data) {
     }
 }
 
-var numMousePresses = 0;
-
-function mousePressed() {
+function handleScreenPress() {
     if (plusPlayers.hitTest() == true) {
         numberOfPlayers++;
     }
@@ -133,14 +186,21 @@ function mousePressed() {
         numberOfPlayers = numberOfPlayers > 0 ? numberOfPlayers - 1 : 0;
     }
 
-    if (createLink.hitTest() == true) {
-        linkCreated = true;
+    if (plusCards.hitTest() == true) {
+        numberOfCards = numberOfCards < 13 ? numberOfCards + 1 : 13;
     }
-    if (gameState.players.length > 0) {
-        if (numMousePresses == 0) {} else if (numMousePresses == 1) {}
 
-        numMousePresses++;
+    if (minusCards.hitTest() == true) {
+        numberOfCards = numberOfCards > 0 ? numberOfCards - 1 : 0;
     }
+}
+
+function mousePressed() {
+    handleScreenPress();
+}
+
+function touchStarted() {
+    handleScreenPress();
 }
 
 function onClientDisconnect(data) {}
@@ -169,8 +229,8 @@ function onReceiveData(data) {
 
                 //first player to play a wizard wins the hand...
                 for (card of gameState.cardsPlayed) {
-                    if (card.number == 'w') {
-                        print("Player " + card.player + " has won this hand");
+                    if (card.number == 'W') {
+                        print(gameState.players[card.player].name + " won this hand");
                         gameState.players[card.player].handsWon++;
                         wizardWasPlayed = true;
                         gameState.winnerOfHand = card.player;

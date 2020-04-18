@@ -36,7 +36,7 @@ function setup() {
     createCanvas(windowWidth, windowHeight);
     console.log(windowWidth, windowHeight);
     textFont("Courier New Bold");
-    infoDisplay = new InfoDisplay("", color(40, 40, 40), color(0), color(255));
+    infoDisplay = new InfoDisplay("", color(200, 0, 200), color(0), color(255));
     loop();
     plusButton = new Button("plusButton", "+", color(0, 200, 0), color(40, 40, 40), color(0, 0, 0), color(0, 155, 0));
     minusButton = new Button("minusButton", "-", color(0, 200, 0), color(40, 40, 40), color(0, 0, 0), color(0, 155, 0));
@@ -46,6 +46,12 @@ function setup() {
 function windowResized() {
     resizeCanvas(windowWidth, windowHeight);
     console.log(windowWidth, windowHeight);
+    if (nameField) {
+        nameField.position(windowWidth * .74, windowHeight * .9);
+        nameField.size(windowWidth * .15, windowHeight * .05);
+        submitButton.position(windowWidth * .9, windowHeight * .9);
+        submitButton.size(windowWidth * .05, windowHeight * .055);
+    }
 }
 
 function draw() {
@@ -57,8 +63,10 @@ function draw() {
     var yPos = 0,
         xPos = 0;
 
+    textAlign(LEFT);
+
     if (playerDetails)
-        text("Player " + playerDetails.number, windowWidth * 0.05, windowHeight - windowHeight * .05);
+        text(playerDetails.name, windowWidth * 0.05, windowHeight - windowHeight * .05);
 
     for (card of currentCards) {
         card.display(
@@ -69,7 +77,7 @@ function draw() {
         );
     }
 
-    xPos = windowWidth * 0.15;
+    xPos = windowWidth * 0.18;
     for (card of cardsPlayed) {
         card.display(
             (xPos += windowWidth * 0.05),
@@ -77,6 +85,15 @@ function draw() {
             windowWidth * 0.125,
             windowHeight * 0.35
         );
+    }
+
+    if (nameField) {
+        nameField.position(windowWidth * .74, windowHeight * .9);
+        nameField.size(windowWidth * .15, windowHeight * .05);
+        submitButton.position(windowWidth * .9, windowHeight * .9);
+        submitButton.size(windowWidth * .05, windowHeight * .055);
+        nameField.style('font-size', windowHeight * .01 + 'px');
+        submitButton.style('font-size', windowHeight * .013 + 'px');
     }
 
     if (trumpCard) {
@@ -90,13 +107,13 @@ function draw() {
         plusButton.display(
             windowWidth * 0.775,
             windowHeight * 0.8,
-            windowWidth * 0.05
+            windowWidth * 0.08
         );
 
         minusButton.display(
             windowWidth * 0.925,
             windowHeight * 0.8,
-            windowWidth * 0.05
+            windowWidth * 0.08
         );
 
         bidButton.display(
@@ -107,17 +124,15 @@ function draw() {
     }
 
     if (bidButton) {
-        if (infoDisplay.text.length > 0) {
-            if (infoDisplay.text.includes('Please bid')) {
-                bidButton.focus = true;
-                plusButton.focus = true;
-                minusButton.focus = true;
-            } else {
-                bidButton.focus = false;
-                plusButton.focus = false;
-                minusButton.focus = false;
-                bidButton.text = 'Done';
-            }
+        if (infoDisplay.text.includes('Please bid')) {
+            bidButton.focus = true;
+            plusButton.focus = true;
+            minusButton.focus = true;
+        } else {
+            bidButton.focus = false;
+            plusButton.focus = false;
+            minusButton.focus = false;
+            bidButton.text = 'Done';
         }
     }
 
@@ -132,39 +147,37 @@ function draw() {
     }
 
     if (infoDisplay.text != '')
-        infoDisplay.display(windowWidth * .3, windowHeight * .45, windowWidth * .4, windowHeight * .08);
+        infoDisplay.display(windowWidth * 0.55, windowHeight * .36, windowWidth * .4, windowHeight * .08);
     if (isClientConnected((display = true))) {}
 }
 
-function drawMessageText(x, y, message) {
-    fill(255);
-    textSize(52);
-    textAlign(CENTER);
-    text(message, x, y);
-}
-
-
-
 function createNameInputField() {
     nameField = createInput('Player ' + playerDetails.number + ': Click to change name');
-    nameField.style('font-size', '21px');
-    nameField.position(windowWidth * .74, windowHeight * .9);
-    nameField.size(windowWidth * .15, windowHeight * .05);
     nameField.mousePressed(nameFieldPressed);
     submitButton = createButton('Submit');
-    submitButton.style('font-size', '24px');
-    submitButton.position(windowWidth * .9, windowHeight * .9);
-    submitButton.size(windowWidth * .05, windowHeight * .055);
     submitButton.mousePressed(submitButtonPressed);
 }
 
 function submitButtonPressed() {
     for (player of gameState.players) {
-        if (player.id == playerDetails.id) {
+        if (player.id == playerDetails.id && !nameField.value().includes("Click to change name")) {
             player.name = nameField.value();
+            playerDetails.name = nameField.value();
         }
     }
     sendData("gameState", gameState);
+}
+
+function keyPressed() {
+    if (key == 'Enter') {
+        for (player of gameState.players) {
+            if (player.id == playerDetails.id && !nameField.value().includes("Click to change name")) {
+                player.name = nameField.value();
+            }
+        }
+        sendData("gameState", gameState);
+        playerDetails.name = nameField.value();
+    }
 }
 
 function nameFieldPressed() {
@@ -177,13 +190,10 @@ function nameFieldPressed() {
 function onReceiveData(incomingGameState) {
     if (incomingGameState.type == "gameState") {
         gameState = incomingGameState;
-        if (leaderBoard)
-            leaderBoard.players = gameState.players;
-
 
         if (gameState.winnerOfHand != -1 && gameState.state == 'playing') {
             var winner = gameState.winnerOfHand;
-            infoDisplay.text = "Player " + gameState.winnerOfHand + " won the hand";
+            infoDisplay.text = gameState.players[gameState.winnerOfHand].name + " won the hand";
 
             gameState.playerToPlay = winner;
             console.log("Incrementing tricks");
@@ -220,7 +230,7 @@ function onReceiveData(incomingGameState) {
         if (firstTimeConnection) {
             for (player of gameState.players) {
                 if (player.id == id) {
-                    playerDetails = { id: id, number: player.number, name: '' };
+                    playerDetails = { id: id, number: player.number, name: player.name };
                 }
             }
             firstTimeConnection = false;
@@ -230,17 +240,17 @@ function onReceiveData(incomingGameState) {
         // console.log("Player number: ", playerDetails.number);
         if (gameState.state == "bidding") {
             if (playerDetails.number == gameState.currentBidder) {
-                infoDisplay.text = "Please bid.";
+                infoDisplay.text = "Please bid";
                 bidButton.text = 'Bid:0';
             } else {
-                infoDisplay.text = "Please wait.";
+                infoDisplay.text = "";
             }
         } else if (gameState.state == "playing") {
             console.log("status:playing");
             if (playerDetails.number == gameState.playerToPlay) {
                 infoDisplay.text = "Please select a card.";
             } else {
-                infoDisplay.text = "Please wait.";
+                infoDisplay.text = "";
             }
         }
 
@@ -343,7 +353,7 @@ function playNextRound() {
     gameState.numberOfBids = 0;
     gameState.handsPlayed = 0;
     gameState.dealer =
-        currentDealer < gameState.players.length ? currentDealer + 1 : 0;
+        currentDealer < gameState.players.length - 1 ? currentDealer + 1 : 0;
     var currentBidder = gameState.currentBidder;
     gameState.playerToPlay = currentBidder;
     console.log("Player to start next round is", gameState.playerToPlay);
@@ -358,6 +368,14 @@ function playNextRound() {
 // mousePressed
 /////////////////////
 function mousePressed() {
+    handleScreenPress()
+}
+
+function touchStarted() {
+    handleScreenPress();
+}
+
+function handleScreenPress() {
     var tempCard,
         wasHit = false;
     if (playerDetails.number == gameState.playerToPlay &&
@@ -390,6 +408,8 @@ function mousePressed() {
             }
 
             if (gameState.cardsPlayed.length == 0 ||
+                gameState.cardsPlayed[0].number == 'W' ||
+                gameState.cardsPlayed[0].number == 0 ||
                 gameState.cardsPlayed[0].suit == tempCard.suit ||
                 tempCard.number == "W" ||
                 tempCard.number == 0 ||
@@ -449,6 +469,7 @@ function mousePressed() {
                         gameState.currentBidder == gameState.players.length - 1 ?
                         0 :
                         gameState.currentBidder + 1;
+                    bidValue = 0;
                 }
             }
             // console.log(gameState);
@@ -456,9 +477,8 @@ function mousePressed() {
             sendData("gameState", gameState);
         }
     }
-
-    //sendData("gameState", gameState);
 }
+
 
 /// Add these lines below sketch to prevent scrolling on mobile
 function touchMoved() {

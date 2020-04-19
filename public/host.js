@@ -271,14 +271,18 @@ function onReceiveData(data) {
 }
 
 function getHighestCard(cards) {
+    var playedCardSuit = cards[0].suit;
     var max = cards[0].number;
     var topCard = cards[0];
-    print(cards[0].number);
+    print("Suit (played card): " + playedCardSuit);
+    print("Number (played card): " + cards[0].number);
     for (var i = 1; i < cards.length; i++) {
-        print(cards[i].number);
-        if (cards[i].number > max) {
-            max = cards[i].number;
-            topCard = cards[i];
+        if (cards[i].suit == playedCardSuit) {
+            print(cards[i].number);
+            if (cards[i].number > max) {
+                max = cards[i].number;
+                topCard = cards[i];
+            }
         }
     }
 

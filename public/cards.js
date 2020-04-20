@@ -34,22 +34,7 @@ class Cards {
 
             }
             this.hands.push(handsTmp);
-            // var handsTmp = new Array(3);
-            // handsTmp[0] = new Array(3);
-            // handsTmp[0][0] = { suit: this.suits[0], number: 1, shouldDisplay: true };
-            // handsTmp[0][1] = { suit: this.suits[1], number: 1, shouldDisplay: true };
-            // handsTmp[0][2] = { suit: this.suits[2], number: 1, shouldDisplay: true };
-            // handsTmp[1] = new Array(3);
-            // handsTmp[1][0] = { suit: this.suits[3], number: 2, shouldDisplay: true };
-            // handsTmp[1][1] = { suit: this.suits[0], number: 2, shouldDisplay: true };
-            // handsTmp[1][2] = { suit: this.suits[1], number: 2, shouldDisplay: true };
-            // handsTmp[2] = new Array(3);
-            // handsTmp[2][0] = { suit: this.suits[2], number: 4, shouldDisplay: true };
-            // handsTmp[2][1] = { suit: this.suits[3], number: 4, shouldDisplay: true };
-            // handsTmp[2][2] = { suit: this.suits[0], number: 4, shouldDisplay: true };
-            // this.hands.push(handsTmp);
 
-            // print("Number of cards reminaing:", this.cards.length);
             this.trump = this.cards[int(random(0, this.cards.length))];
 
         } else

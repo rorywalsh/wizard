@@ -16,11 +16,11 @@ class GameState {
         this.state = '';
     }
 
-    getHighestCard(cards) {
+    findHighestCard(cards) {
 
     }
 
-    getLowestCard(cards) {
+    findLowestCard(cards) {
 
     }
 
@@ -28,11 +28,27 @@ class GameState {
 
     }
 
-    dealCards(numberofCards, numberOfPlayers) {
+    findBestStraight(cards) {
 
     }
 
-    selectTrump() {
+    findBestPair(cards) {
+
+    }
+
+    findBestThreeOfAKind(cards) {
+
+    }
+
+    findBestFourOfAKind(cards) {
+
+    }
+
+    dealCards(numberOfCards, numberOfPlayers) {
+
+    }
+
+    setTrump() {
 
     }
 

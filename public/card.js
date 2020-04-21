@@ -19,6 +19,7 @@ class Card {
         return collidePointRect(mouseX, mouseY, this.x, this.y, this.w, this.h);
     }
 
+    //edit to change lokk of cards
     drawCard() {
         this.x = x;
         this.y = y;

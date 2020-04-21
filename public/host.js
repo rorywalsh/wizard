@@ -25,14 +25,14 @@ let numberOfPlayers = 2;
 
 function preload() {
     setupHost();
-    
+
 }
 
 function setup() {
     //create out game object
     game = new GameState();
     //add cards to game 
-    game.addCards(Cards.createDeck(12, ['red', 'blue', 'green', 'orange'], []));
+    game.addCards(Cards.createDeck(12, ['diamonds', 'clubs', 'spades', 'hearts'], []));
 
 }
 
@@ -62,7 +62,7 @@ function onClientConnect(data) {
 }
 
 //called to start a new game
-function startGame(){
+function startGame() {
     let numberOfCards = 5;
     game.dealCards(numberOfCards);
     //send datra to players

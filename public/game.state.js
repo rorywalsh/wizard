@@ -1,6 +1,6 @@
 //player class 
-class Player{
-    constructor(id, number){
+class Player {
+    constructor(id, number) {
         this.id = id;
         this.number = number;
         this.bid = -1;
@@ -30,15 +30,15 @@ class GameState {
         this.state = '';
     }
 
-    addCards(cards){
+    addCards(cards) {
         this.cards = cards;
     }
-    
-    getNumberOfPlayers(){
+
+    getNumberOfPlayers() {
         return this.players.length;
     }
 
-    addPlayer(player){
+    addPlayer(player) {
         this.players.push(player);
     }
 
@@ -59,7 +59,7 @@ class GameState {
     }
 
 
-    setAcesHigh(acesAreHigh){
+    setAcesHigh(acesAreHigh) {
         this.acesHigh = acesAreHigh;
     }
 
@@ -99,10 +99,10 @@ class GameState {
 
     }
 
-    getPlayerFromId(id){
-        for(player of this.players){
-            if(player.id === id){
-                return player;
+    getPlayer(id) {
+        for (var i = 0; i < this.players.length; i++) {
+            if (this.players[i].id === id) {
+                return this.players[i];
             }
         }
     }

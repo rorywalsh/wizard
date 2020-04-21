@@ -1,6 +1,5 @@
-// Network Settings
-// const serverIp      = 'https://yourservername.herokuapp.com';
-// const serverIp      = 'https://yourprojectname.glitch.me';
+//Player sketch - one instance per player
+
 const serverIp = "127.0.0.1";
 const serverPort = "3000";
 const local = true; // true if running locally, false
@@ -12,6 +11,7 @@ const local = true; // true if running locally, false
 let firstTimeConnection = true;
 let playerDetails;
 let game;
+let cardsInHand = [];
 
 function preload() {
     setupClient();
@@ -30,33 +30,54 @@ function windowResized() {
 function draw() {
     // console.log("Drawing");
     background(255);
+
+    if (playerDetails && game) {
+        drawName();
+        drawCards();
+    }
+}
+
+function drawName() {
     fill(0);
     textSize(40);
-    if (playerDetails && game)
-        text("Name:" + playerDetails.name + ' Number of cards:' + game.getPlayerFromId(playerDetails.id).currentCards.length, 
-            windowWidth * 0.05, windowHeight -  windowHeight * .1);
+    textAlign(LEFT);
+    text("Name:" + playerDetails.name + ' Number of cards:' + game.getPlayer(playerDetails.id).currentCards.length,
+        windowWidth * 0.05, windowHeight - windowHeight * .05);
+}
 
+function drawCards() {
+    xPos = windowWidth * 0.01;
+    for (card of cardsInHand) {
+        card.display(
+            (xPos += windowWidth * 0.05),
+            windowHeight * 0.55,
+            windowWidth * 0.125,
+            windowHeight * 0.35
+        );
+    }
 }
 
 //called each time host sends a message
 function onReceiveData(incomingGameState) {
     if (incomingGameState.type == "gameState") {
-        //reassign socket data as gameState clas object
+        //reassign socket data as gameState class object
         game = Object.assign(new GameState(), incomingGameState);
 
-        //if first time connection add player to local playerDetails object
+        //if first time connection  - add player to local playerDetails object and create player's cards
         if (firstTimeConnection) {
-            for (player of game.players) {
-                print(player);
-                if (player.id == id) {
-                    print("Found a player");
-                    playerDetails = { id: id, number: player.number, name: player.name };
-                }
+            playerDetails = { id: game.getPlayer(id).id, number: game.getPlayer(id).number, name: game.getPlayer(id).name };
+
+            let xPos = 0;
+            for (card of game.getPlayer(id).currentCards) {
+                cardsInHand.push(new Card(card.suit, card.number));
+                xPos += 110;
             }
+
             firstTimeConnection = false;
         }
     }
 }
+
 
 
 //handle mouse presses
@@ -69,7 +90,11 @@ function touchStarted() {
 }
 
 function handleScreenPress() {
-
+    for (card of cardsInHand) {
+        if (card.hitTest() === true) {
+            console.log('You just selected ' + card.suit + ' ' + card.number);
+        }
+    }
 }
 
 

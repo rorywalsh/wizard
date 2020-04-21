@@ -29,8 +29,11 @@ function preload() {
 }
 
 function setup() {
+    //create out game object
     game = new GameState();
-    game.addCards(new Cards(12, ['red', 'blue', 'green', 'orange'], []));
+    //add cards to game 
+    game.addCards(Cards.createDeck(12, ['red', 'blue', 'green', 'orange'], []));
+
 }
 
 function windowResized() {
@@ -47,7 +50,7 @@ function onClientDisconnect(data) {
 }
 
 function onClientConnect(data) {
-    //push each newly logged on player to gameState
+    //push each newly logged on player to gameState adding a unique IP and int ID each time
     game.addPlayer(new Player(data.id, game.getNumberOfPlayers()));
 
     // once all players have logged on, start new round...
@@ -55,13 +58,16 @@ function onClientConnect(data) {
         setTimeout(function() {
             startGame();
         }, 1000)
-
     }
 }
 
 //called to start a new game
 function startGame(){
-
+    let numberOfCards = 5;
+    game.dealCards(numberOfCards);
+    //send datra to players
+    console.log(game);
+    sendData("gameState", game);
 }
 
 //called each time a player sends data

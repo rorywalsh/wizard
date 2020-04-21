@@ -1,20 +1,20 @@
+//player class 
 class Player{
     constructor(id, number){
         this.id = id;
         this.number = number;
         this.bid = -1;
-        this.turn = false;
         this.handsWon = 0;
         this.score = 0;
         this.name = 'Player ' + number;
-        this.currentCard = { suit: '', value: -1 };
+        this.currentCards = [];
     }
 };
 
+//main game state class
 class GameState {
     constructor() {
         this.players = [];
-        this.currentCards = [];
         this.score = 0;
         this.cards = null;
         this.dealer = 0;
@@ -42,21 +42,20 @@ class GameState {
         this.players.push(player);
     }
 
-    dealCards(numberOfCards, numberOfPlayers) {
-        var handsTmp = new Array(numberOfPlayers);
-        if (this.cards.length > numCards) {
-            for (var player = 0; player < numPlayers; player++) {
-                handsTmp[player] = new Array(numCards);
-                for (var i = 0; i < numCards; i++) {
+    dealCards(numberOfCards) {
+        print(this.cards.length);
+        if (this.cards.length > numberOfCards) {
+            for (var player = 0; player < this.players.length; player++) {
+                this.players[player].currentCards = new Array(numberOfCards);
+                for (var i = 0; i < numberOfCards; i++) {
                     var cardIndex = int(random(0, this.cards.length));
-                    handsTmp[player][i] = (this.cards[cardIndex]);
+                    this.players[player].currentCards[i] = (this.cards[cardIndex]);
                     this.cards.splice(cardIndex, 1);
                 }
+                console.log(this.players[player].currentCards);
             }
-            this.hands.push(handsTmp);
-
         } else
-            print("Not enough cards remaining for a deal");
+            console.log("Not enough cards remaining for a deal");
     }
 
 
@@ -101,7 +100,11 @@ class GameState {
     }
 
     getPlayerFromId(id){
-
+        for(player of this.players){
+            if(player.id === id){
+                return player;
+            }
+        }
     }
 
 }

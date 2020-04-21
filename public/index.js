@@ -11,15 +11,15 @@ const local = true; // true if running locally, false
 
 let firstTimeConnection = true;
 let playerDetails;
+let game;
 
 function preload() {
     setupClient();
-    noLoop();
 }
 
 function setup() {
+    game = new GameState();
     createCanvas(windowWidth, windowHeight);
-  
 }
 
 function windowResized() {
@@ -31,23 +31,25 @@ function draw() {
     // console.log("Drawing");
     background(255);
     fill(0);
-    stroke(0);
- 
-    if (playerDetails)
-        text(playerDetails.name, windowWidth * 0.05, windowHeight - windowHeight * .05);
+    textSize(40);
+    if (playerDetails && game)
+        text("Name:" + playerDetails.name + ' Number of cards:' + game.getPlayerFromId(playerDetails.id).currentCards.length, 
+            windowWidth * 0.05, windowHeight -  windowHeight * .1);
 
 }
 
 //called each time host sends a message
 function onReceiveData(incomingGameState) {
     if (incomingGameState.type == "gameState") {
-        gameState = incomingGameState;
+        //reassign socket data as gameState clas object
+        game = Object.assign(new GameState(), incomingGameState);
 
-
-        numberOfPlayers = gameState.players.length;
+        //if first time connection add player to local playerDetails object
         if (firstTimeConnection) {
-            for (player of gameState.players) {
+            for (player of game.players) {
+                print(player);
                 if (player.id == id) {
+                    print("Found a player");
                     playerDetails = { id: id, number: player.number, name: player.name };
                 }
             }

@@ -63,7 +63,7 @@ function onClientConnect(data) {
 
 //called to start a new game
 function startGame() {
-    let numberOfCards = 5;
+    let numberOfCards = 13;
     game.dealCards(numberOfCards);
     //send datra to players
     console.log(game);

@@ -34,16 +34,16 @@ class Card {
         text(this.number, this.getBounds('bottomLeft').x, this.getBounds('bottomLeft').y, this.getBounds('bottomLeft').w);
         text(this.number, this.getBounds('bottomRight').x, this.getBounds('bottomRight').y, this.getBounds('bottomRight').w);
 
-        let suitBoundsTopLeft = this.getBounds('topLeft', -windowWidth * .003, windowHeight * .02, 0, -windowHeight * 0.02);
+        let suitBoundsTopLeft = this.getBounds('topLeft', 0, windowHeight * .02, .7);
         this.drawSuit(suitBoundsTopLeft.x, suitBoundsTopLeft.y, suitBoundsTopLeft.w, suitBoundsTopLeft.h);
 
-        let suitBoundsBottomLeft = this.getBounds('bottomLeft', -windowWidth * .003, -windowHeight * .09, 0, -windowHeight * 0.02);
+        let suitBoundsBottomLeft = this.getBounds('bottomLeft', 0, -windowHeight * .07, .7);
         this.drawSuit(suitBoundsBottomLeft.x, suitBoundsBottomLeft.y, suitBoundsBottomLeft.w, suitBoundsBottomLeft.h);
 
-        let suitBoundsTopRight = this.getBounds('topRight', -windowWidth * .003, windowHeight * .02, 0, -windowHeight * 0.02);
+        let suitBoundsTopRight = this.getBounds('topRight', 0, windowHeight * .02, .7);
         this.drawSuit(suitBoundsTopRight.x, suitBoundsTopRight.y, suitBoundsTopRight.w, suitBoundsTopRight.h);
 
-        let suitBoundsBottomRight = this.getBounds('bottomRight', -windowWidth * .003, -windowHeight * .09, 0, -windowHeight * 0.02);
+        let suitBoundsBottomRight = this.getBounds('bottomRight', 0, -windowHeight * .07, .7);
         this.drawSuit(suitBoundsBottomRight.x, suitBoundsBottomRight.y, suitBoundsBottomRight.w, suitBoundsBottomRight.h);
     }
 
@@ -60,24 +60,52 @@ class Card {
 
     drawSuit(x, y, w, h) {
         //only draws diamonds for now...
-        fill(0);
-        stroke(0);
-        triangle(x, y + h / 2, x + (w / 2), y, x + w, y + h / 2);
-        triangle(x, y + h / 2, x + (w / 2), h + y, x + w, y + h / 2);
+        if (this.suit === 'diamonds') {
+            fill(255, 0, 0);
+            stroke(255, 0, 0);
+            triangle(x, y + h / 2, x + (w / 2), y, x + w, y + h / 2);
+            triangle(x, y + h / 2, x + (w / 2), h + y, x + w, y + h / 2);
+        } else if (this.suit === 'hearts') {
+            push();
+            beginShape();
+            fill(255, 0, 0);
+            let numSteps = 50;
+            let size = 2;
+            for (var t = 0; t < 2 * PI; t += 2 * PI / numSteps) {
+                var newX = 16 * pow(sin(t), 3);
+                var newY = 13 * cos(t) - 5 * cos(2 * t) - 2 * cos(3 * t) - cos(4 * t);
+                vertex((w / 2 + size * newX) + x, (h / 2 - size * (newY) * 1.5) + y);
+            }
+            endShape(CLOSE);
+            pop();
+        } else if (this.suit === 'spades') {
+            push();
+            beginShape();
+            fill(0);
+            let numSteps = 50;
+            let size = 2;
+            for (var t = 0; t < 2 * PI; t += 2 * PI / numSteps) {
+                var newX = 16 * pow(sin(t), 3);
+                var newY = 13 * cos(t) - 5 * cos(2 * t) - 2 * cos(3 * t) - cos(4 * t);
+                vertex(w - (w / 2 + size * newX) + x * 1.001, h - (h / 2 - size * (newY) * 1.5) + y * 1.01);
+            }
+            endShape(CLOSE);
+            pop();
+        }
     }
 
     //return rectangle in one of four positions relative to card
-    getBounds(pos, x = 0, y = 0, w = 0, h = 0) {
+    getBounds(pos, x = 0, y = 0, scale = 1) {
         let bounds;
         if (pos == 'topLeft')
-            bounds = { x: this.x + this.w * 0.1, y: this.y + this.h * 0.1, w: this.w * 0.25, h: this.h * .25 }
+            bounds = { x: this.x + this.w * 0.1, y: this.y + this.h * 0.1, w: this.w * 0.2, h: this.h * .2 }
         else if (pos == 'topRight')
-            bounds = { x: this.x + this.w * 0.7, y: this.y + this.h * 0.1, w: this.w * 0.25, h: this.h * .25 }
+            bounds = { x: this.x + this.w * 0.7, y: this.y + this.h * 0.1, w: this.w * 0.2, h: this.h * .2 }
         else if (pos == 'bottomLeft')
-            bounds = { x: this.x + this.w * 0.1, y: this.y + this.h * 0.9, w: this.w * 0.25, h: this.h * .25 }
+            bounds = { x: this.x + this.w * 0.1, y: this.y + this.h * 0.9, w: this.w * 0.2, h: this.h * .2 }
         else if (pos == 'bottomRight')
-            bounds = { x: this.x + this.w * 0.7, y: this.y + this.h * 0.9, w: this.w * 0.25, h: this.h * .25 }
+            bounds = { x: this.x + this.w * 0.7, y: this.y + this.h * 0.9, w: this.w * 0.2, h: this.h * .2 }
 
-        return { x: bounds.x + x, y: bounds.y + y, w: bounds.w + w, h: bounds.h + h };
+        return { x: bounds.x + x, y: bounds.y + y, w: bounds.w * scale, h: bounds.h * scale };
     }
 }

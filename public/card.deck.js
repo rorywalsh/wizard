@@ -41,10 +41,4 @@ class Cards {
 
     //     } else
     //         print("Not enough cards remaining for a deal");
-    }
-
-
-
-
-
 }

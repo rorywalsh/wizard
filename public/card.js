@@ -58,8 +58,9 @@ class Card {
         strokeWeight(1);
     }
 
+
     drawSuit(x, y, w, h) {
-        //only draws diamonds for now...
+        //use images if you don't want to draw with trigonometry...
         if (this.suit === 'diamonds') {
             fill(255, 0, 0);
             stroke(255, 0, 0);
@@ -84,12 +85,48 @@ class Card {
             fill(0);
             let numSteps = 50;
             let size = 2;
+            let leafH = h * .8;
             for (var t = 0; t < 2 * PI; t += 2 * PI / numSteps) {
                 var newX = 16 * pow(sin(t), 3);
                 var newY = 13 * cos(t) - 5 * cos(2 * t) - 2 * cos(3 * t) - cos(4 * t);
-                vertex(w - (w / 2 + size * newX) + x * 1.001, h - (h / 2 - size * (newY) * 1.5) + y * 1.01);
+                vertex(w - (w / 2 + size * newX) + x * 1.001, leafH - (leafH / 2 - size * (newY)) + y);
             }
             endShape(CLOSE);
+            pop();
+            push();
+            fill(0);
+            stroke(0);
+            strokeWeight(5);
+            let newStemX = x * 1.001;
+            beginShape();
+            vertex(newStemX + w / 3, y + h);
+            quadraticVertex(newStemX + w / 2, y + h, newStemX + w / 2, y + h / 2);
+            vertex(newStemX + w / 2, y + h / 2);
+            quadraticVertex(newStemX + w / 2, y + h, newStemX + (w / 3) * 2, y + h);
+            endShape(CLOSE)
+            pop();
+        } else if (this.suit === 'clubs') {
+            push();
+            beginShape();
+            fill(0);
+            stroke(0);
+            ellipse(x + w / 2, y + h * .25, w * .8);
+            ellipse(x + w / 2, y + h * .5, w * .4);
+            ellipse(x + w * .1, y + h * .6, w * .8);
+            ellipse(x + w * .9, y + h * .6, w * .8);
+            endShape(CLOSE);
+            pop();
+            push();
+            fill(0);
+            stroke(0);
+            strokeWeight(5);
+            let newStemX = x * 1.001;
+            beginShape();
+            vertex(newStemX + w / 3, y + h);
+            quadraticVertex(newStemX + w / 2, y + h, newStemX + w / 2, y + h / 2);
+            vertex(newStemX + w / 2, y + h / 2);
+            quadraticVertex(newStemX + w / 2, y + h, newStemX + (w / 3) * 2, y + h);
+            endShape(CLOSE)
             pop();
         }
     }

@@ -13,22 +13,12 @@ let playerDetails;
 let game;
 let cardsInHand = [];
 
-function preload() {
-    setupClient();
-}
-
 function setup() {
     game = new GameState();
     createCanvas(windowWidth, windowHeight);
 }
 
-function windowResized() {
-    resizeCanvas(windowWidth, windowHeight);
-    console.log(windowWidth, windowHeight);
-}
-
 function draw() {
-    // console.log("Drawing");
     background(255);
 
     if (playerDetails && game) {
@@ -37,6 +27,7 @@ function draw() {
     }
 }
 
+//display users name
 function drawName() {
     fill(0);
     textSize(40);
@@ -45,6 +36,7 @@ function drawName() {
         windowWidth * 0.05, windowHeight - windowHeight * .05);
 }
 
+//displays users cards
 function drawCards() {
     xPos = windowWidth * 0.01;
     for (card of cardsInHand) {
@@ -78,8 +70,22 @@ function onReceiveData(incomingGameState) {
     }
 }
 
+//called when a user presses a particular card
+function playCard(card) {
+    console.log('You just selected ' + card.suit + ' ' + card.number);
+}
 
+//called whenever a user presses anywhere on screen..
+function handleScreenPress() {
+    //first check if this users turn to play card...
+    for (card of cardsInHand) {
+        if (card.shouldPlayCard() === true) {
+            playCard(card);
+        }
+    }
+}
 
+//=======================================================================================================================
 //handle mouse presses
 function mousePressed() {
     handleScreenPress()
@@ -89,17 +95,18 @@ function touchStarted() {
     handleScreenPress();
 }
 
-function handleScreenPress() {
-    for (card of cardsInHand) {
-        if (card.hitTest() === true) {
-            console.log('You just selected ' + card.suit + ' ' + card.number);
-        }
-    }
-}
-
 
 /// Add these lines below sketch to prevent scrolling on mobile
 function touchMoved() {
     // do some stuff
     return false;
+}
+
+function preload() {
+    setupClient();
+}
+
+function windowResized() {
+    resizeCanvas(windowWidth, windowHeight);
+    console.log(windowWidth, windowHeight);
 }

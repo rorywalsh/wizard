@@ -1,13 +1,9 @@
 //player class 
-class Player {
+class WizardPlayer extends BasePlayer {
     constructor(id, number) {
-        this.id = id;
-        this.number = number;
+        super(id, number);
         this.bid = -1;
         this.handsWon = 0;
-        this.score = 0;
-        this.name = 'Player ' + number;
-        this.currentCards = [];
     }
 };
 

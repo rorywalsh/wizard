@@ -22,7 +22,7 @@ class GameState {
         this.currentBidder = 0;
         this.numberOfBids = 0;
         this.winnerOfLastHand = -1;
-        this.playerToPlay = 0;
+        this.playerUp = 0;
         this.cardsPlayedInCurrentHand = 0;
         this.tricksPlayed = 0;
         this.cardsPlayed = [];

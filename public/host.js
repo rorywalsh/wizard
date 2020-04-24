@@ -70,10 +70,12 @@ function startGame() {
     sendData("gameState", game);
 }
 
-//called each time a player sends data
+//called each time a player sends data - after data is received, pass it out to all players
 function onReceiveData(data) {
     if (data.type == "gameState") {
-        game = data;
-
+        game = Object.assign(new GameState(), data);
+        console.log(game.playerUp);
     }
+
+    sendData("gameState", game);
 }

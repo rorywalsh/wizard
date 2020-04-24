@@ -60,9 +60,10 @@ function onReceiveData(incomingGameState) {
             playerDetails = { id: game.getPlayer(id).id, number: game.getPlayer(id).number, name: game.getPlayer(id).name };
 
             let xPos = 0;
+            let cardOverlap = windowWidth * .1;
             for (card of game.getPlayer(id).currentCards) {
-                cardsInHand.push(new Card(card.suit, card.number));
-                xPos += 110;
+                cardsInHand.push(new Card(card.suit, card.number, cardOverlap / 2));
+                xPos += cardOverlap;
             }
 
             firstTimeConnection = false;
@@ -78,10 +79,18 @@ function playCard(card) {
 //called whenever a user presses anywhere on screen..
 function handleScreenPress() {
     //first check if this users turn to play card...
-    for (card of cardsInHand) {
-        if (card.shouldPlayCard() === true) {
-            playCard(card);
+    if (game.playerUp === playerDetails.number) {
+        for (card of cardsInHand) {
+            if (card.shouldPlayCard() === true) {
+                playCard(card);
+            }
         }
+        //increment playerUp
+        game.playerUp = game.playerUp < game.getNumberOfPlayers() - 1 ? game.playerUp + 1 : 0;
+        sendData("gameState", game);
+
+    } else {
+        console.log("It's not your turn dopey!");
     }
 }
 

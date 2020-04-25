@@ -11,7 +11,7 @@ const local = true; // true if running locally, false
 let firstTimeConnection = true;
 let playerDetails;
 let game;
-let cardsInHand = [];
+let cardsInPlayersHand = [];
 
 function setup() {
     game = new GameState();
@@ -39,7 +39,7 @@ function drawName() {
 //displays users cards
 function drawCards() {
     xPos = windowWidth * 0.01;
-    for (card of cardsInHand) {
+    for (card of cardsInPlayersHand) {
         card.display(
             (xPos += windowWidth * 0.05),
             windowHeight * 0.55,
@@ -62,7 +62,7 @@ function onReceiveData(incomingGameState) {
             let xPos = 0;
             let cardOverlap = windowWidth * .1;
             for (card of game.getPlayer(id).currentCards) {
-                cardsInHand.push(new Card(card.suit, card.number, cardOverlap / 2));
+                cardsInPlayersHand.push(new Card(card.suit, card.number, cardOverlap / 2));
                 xPos += cardOverlap;
             }
 
@@ -74,14 +74,28 @@ function onReceiveData(incomingGameState) {
 //called when a user presses a particular card
 function playCard(card) {
     console.log('You just selected ' + card.suit + ' ' + card.number);
-    cardsInHand.splice(cardsInHand.indexOf(card), 1);
+    cardsInPlayersHand.splice(cardsInPlayersHand.indexOf(card), 1);
+}
+
+//called when a user picks a card from the deck
+function pickACardFromTheDeck(card) {
+    console.log('You just selected ' + card.suit + ' ' + card.number);
+}
+
+//called when a user picks a card from the deck
+function pickACardFromTheHand(card) {
+    console.log('You just selected ' + card.suit + ' ' + card.number);
+}
+//called when a user presses a particular card
+function pickUpAllCards(cards) {
+    console.log('You just selected ' + card.suit + ' ' + card.number);
 }
 
 //called whenever a user presses anywhere on screen..
 function handleScreenPress() {
     //first check if this users turn to play card...
     if (game.playerUp === playerDetails.number) {
-        for (card of cardsInHand) {
+        for (card of cardsInPlayersHand) {
             if (card.shouldPlayCard() === true) {
                 playCard(card);
             }

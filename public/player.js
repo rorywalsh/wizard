@@ -74,6 +74,7 @@ function onReceiveData(incomingGameState) {
 //called when a user presses a particular card
 function playCard(card) {
     console.log('You just selected ' + card.suit + ' ' + card.number);
+    cardsInHand.splice(cardsInHand.indexOf(card), 1);
 }
 
 //called whenever a user presses anywhere on screen..

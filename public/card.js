@@ -1,8 +1,6 @@
 // Represents a single card
 class Card {
     constructor(suit, number, spacing) {
-        print('============');
-        print(spacing);
         this.suit = suit;
         this.number = number;
         this.spacing = spacing;

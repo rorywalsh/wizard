@@ -12,6 +12,7 @@ class Card {
         this.diamondImg = loadImage('imgs/diamonds.png');
         this.spadeImg = loadImage('imgs/spades.png');
         this.heartImg = loadImage('imgs/hearts.png');
+
     }
 
     display(x, y, w, h) {
@@ -22,7 +23,20 @@ class Card {
         return collidePointRect(mouseX, mouseY, this.x, this.y, this.spacing, this.h);
     }
 
-    //edit to change look of cards
+    getText(number) {
+            if (this.number == 11)
+                return 'J';
+            else if (this.number == 12)
+                return 'Q';
+            else if (this.number == 13)
+                return 'K';
+            else if (this.number == 14)
+                return 'A';
+            else
+                return this.number;
+
+        }
+        //edit to change look of cards
     drawCard(x, y, w, h) {
         this.x = x;
         this.y = y;
@@ -35,10 +49,10 @@ class Card {
         textAlign(CENTER, CENTER);
         fill(0);
         textSize(this.h * .1)
-        text(this.number, this.getBounds('topLeft').x, this.getBounds('topLeft').y, this.getBounds('topLeft').w);
-        text(this.number, this.getBounds('topRight').x, this.getBounds('topRight').y, this.getBounds('topRight').w);
-        text(this.number, this.getBounds('bottomLeft').x, this.getBounds('bottomLeft').y, this.getBounds('bottomLeft').w);
-        text(this.number, this.getBounds('bottomRight').x, this.getBounds('bottomRight').y, this.getBounds('bottomRight').w);
+        text(this.getText(this.number), this.getBounds('topLeft').x, this.getBounds('topLeft').y, this.getBounds('topLeft').w);
+        text(this.getText(this.number), this.getBounds('topRight').x, this.getBounds('topRight').y, this.getBounds('topRight').w);
+        text(this.getText(this.number), this.getBounds('bottomLeft').x, this.getBounds('bottomLeft').y, this.getBounds('bottomLeft').w);
+        text(this.getText(this.number), this.getBounds('bottomRight').x, this.getBounds('bottomRight').y, this.getBounds('bottomRight').w);
 
         let suitBoundsTopLeft = this.getBounds('topLeft', 0, windowHeight * .02, min(windowHeight * .001, .8));
         this.drawSuit(suitBoundsTopLeft.x, suitBoundsTopLeft.y, suitBoundsTopLeft.w, suitBoundsTopLeft.h);

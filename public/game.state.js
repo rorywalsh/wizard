@@ -3,7 +3,6 @@ class Player {
     constructor(id, number) {
         this.id = id;
         this.number = number;
-        this.bid = -1;
         this.handsWon = 0;
         this.score = 0;
         this.name = 'Player ' + number;
@@ -43,7 +42,6 @@ class GameState {
     }
 
     dealCards(numberOfCards) {
-        print(this.cards.length);
         if (this.cards.length > numberOfCards) {
             for (var player = 0; player < this.players.length; player++) {
                 this.players[player].currentCards = new Array(numberOfCards);

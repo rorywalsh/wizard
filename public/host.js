@@ -32,8 +32,17 @@ function setup() {
     //create out game object
     game = new GameState();
     //add cards to game 
-    game.addCards(Cards.createDeck(12, ['diamonds', 'clubs', 'spades', 'hearts'], []));
+    game.addCards(Cards.createDeck(8, 7, 'French-suited', ['diamonds', 'clubs', 'spades', 'hearts'], []));
 
+}
+
+
+class WizardPlayer extends Player {
+    constructor(id, number) {
+        super(id, number);
+        this.id = id;
+        this.number = number;
+    }
 }
 
 function windowResized() {
@@ -51,7 +60,7 @@ function onClientDisconnect(data) {
 
 function onClientConnect(data) {
     //push each newly logged on player to gameState adding a unique IP and int ID each time
-    game.addPlayer(new Player(data.id, game.getNumberOfPlayers()));
+    game.addPlayer(new WizardPlayer(data.id, game.getNumberOfPlayers()));
 
     // once all players have logged on, start new round...
     if (game.getNumberOfPlayers() === numberOfPlayers) {
@@ -63,7 +72,7 @@ function onClientConnect(data) {
 
 //called to start a new game
 function startGame() {
-    let numberOfCards = 13;
+    let numberOfCards = 6;
     game.dealCards(numberOfCards);
     //send datra to players
     console.log(game);

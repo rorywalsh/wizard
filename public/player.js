@@ -13,6 +13,7 @@ let playerDetails;
 let game;
 let cardsInPlayersHand = [];
 
+
 function setup() {
     game = new GameState();
     createCanvas(windowWidth, windowHeight);
@@ -90,7 +91,10 @@ function pickACardFromTheHand(card) {
 function pickUpAllCards(cards) {
     console.log('You just selected ' + card.suit + ' ' + card.number);
 }
-
+//called when a user presses a particular card
+function dropACard(cards) {
+    console.log('You just selected ' + card.suit + ' ' + card.number);
+}
 //called whenever a user presses anywhere on screen..
 function handleScreenPress() {
     //first check if this users turn to play card...

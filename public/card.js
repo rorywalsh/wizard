@@ -1,6 +1,6 @@
 // Represents a single card
 class Card {
-    constructor(suit, number, spacing) {
+    constructor(suit, number = -1, spacing = 1) {
         this.suit = suit;
         this.number = number;
         this.spacing = spacing;
@@ -12,11 +12,34 @@ class Card {
         this.diamondImg = loadImage('imgs/diamonds.png');
         this.spadeImg = loadImage('imgs/spades.png');
         this.heartImg = loadImage('imgs/hearts.png');
+        this.heartImg = loadImage('imgs/hearts.png');
+        if (suit === 'Deck') {
+            this.showTopOfDeck = true;
+        } else this.showTopOfDeck = false;
 
     }
 
     display(x, y, w, h) {
-        this.drawCard(x, y, w, h);
+        this.x = x;
+        this.y = y;
+        this.w = w;
+        this.h = h;
+        this.drawOutline(x, y, w, h);
+        if (this.showTopOfDeck === true) {
+            this.drawTopOfDeck(x, y, w, h);
+        } else {
+            this.drawCard(x, y, w, h);
+        }
+
+
+    }
+
+    drawTopOfDeck(x, y, w, h) {
+        strokeWeight(2);
+        stroke(0);
+        fill(255, 0, 0);
+        strokeWeight(w * .01);
+        rect(x * 1.1, y * 1.15, w * .9, h * .9, w * .1);
     }
 
     shouldPlayCard() {
@@ -34,17 +57,9 @@ class Card {
                 return 'A';
             else
                 return this.number;
-
         }
         //edit to change look of cards
     drawCard(x, y, w, h) {
-        this.x = x;
-        this.y = y;
-        this.w = w;
-        this.h = h;
-
-        this.drawOutline();
-
         fill(255);
         textAlign(CENTER, CENTER);
         fill(0);
@@ -67,14 +82,14 @@ class Card {
         this.drawSuit(suitBoundsBottomRight.x, suitBoundsBottomRight.y, suitBoundsBottomRight.w, suitBoundsBottomRight.h);
     }
 
-    drawOutline() {
+    drawOutline(x, y, w, h) {
         stroke(0);
         fill(255);
         strokeWeight(6);
-        rect(this.x, this.y, this.w, this.h, this.h * 0.05);
+        rect(x, y, w, h, h * 0.05);
         strokeWeight(2);
         stroke(255);
-        rect(this.x + 2, this.y + 2, this.w - 4, this.h - 4, this.h * 0.05);
+        rect(x + 2, y + 2, w - 4, h - 4, h * 0.05);
         strokeWeight(1);
     }
 

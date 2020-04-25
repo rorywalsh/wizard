@@ -56,6 +56,9 @@ class GameState {
             console.log("Not enough cards remaining for a deal");
     }
 
+    getDeck() {
+        return this.cards;
+    }
 
     setAcesHigh(acesAreHigh) {
         this.acesHigh = acesAreHigh;

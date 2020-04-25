@@ -15,8 +15,10 @@ class Cards {
                     cards.push({ suit: suits[suit], number: specialCard, shouldDisplay: true });
                 }
             }
-
             return cards;
+
+        } else if (cardType === 'Wizard') {
+
         }
     }
 }

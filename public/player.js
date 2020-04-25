@@ -12,6 +12,8 @@ let firstTimeConnection = true;
 let playerDetails;
 let game;
 let cardsInPlayersHand = [];
+let deck;
+
 
 
 function setup() {
@@ -21,10 +23,13 @@ function setup() {
 
 function draw() {
     background(255);
-
+    drawTopOfDeck();
     if (playerDetails && game) {
         drawName();
         drawCards();
+    }
+    if (deck) {
+        deck.display(windowWidth * 0.06, windowHeight * 0.1, windowWidth * 0.125, windowHeight * 0.35);
     }
 }
 
@@ -50,6 +55,14 @@ function drawCards() {
     }
 }
 
+function drawTopOfDeck(xPos, yPos, w, h) {
+    for (let i = 0; i < w; i += 2) {
+        strokeWeight(2);
+        stroke(0);
+        line(xPos * windowWidth + i, yPos * windowHeight, xPos * windowWidth + i + 10, xPos * windowWidth + h.windowHeight);
+    }
+}
+
 //called each time host sends a message
 function onReceiveData(incomingGameState) {
     if (incomingGameState.type == "gameState") {
@@ -67,6 +80,9 @@ function onReceiveData(incomingGameState) {
                 xPos += cardOverlap;
             }
 
+            deck = new Card('Deck', -1, cardOverlap);
+
+
             firstTimeConnection = false;
         }
     }
@@ -74,13 +90,22 @@ function onReceiveData(incomingGameState) {
 
 //called when a user presses a particular card
 function playCard(card) {
+    //call some kind of method to determine tif this is a legal card..
     console.log('You just selected ' + card.suit + ' ' + card.number);
     cardsInPlayersHand.splice(cardsInPlayersHand.indexOf(card), 1);
 }
 
 //called when a user picks a card from the deck
-function pickACardFromTheDeck(card) {
-    console.log('You just selected ' + card.suit + ' ' + card.number);
+function pickACardFromTheDeck() {
+    //console.log('You just selected ' + card.suit + ' ' + card.number);
+    let deck = game.getDeck();
+    console.log(deck);
+    let cardTurnedOver = random(deck.length);
+    print(cardTurnedOver);
+    console.log(deck[int(cardTurnedOver)]);
+    //console.log("You just turned over " + cardTurnedOver.number + ' ' + cardTurnedOver.suit);
+    //game.cards.splice(game.cards.indexOf(cardTurnedOver));
+
 }
 
 //called when a user picks a card from the deck
@@ -88,11 +113,11 @@ function pickACardFromTheHand(card) {
     console.log('You just selected ' + card.suit + ' ' + card.number);
 }
 //called when a user presses a particular card
-function pickUpAllCards(cards) {
+function pickUpAllCards(card) {
     console.log('You just selected ' + card.suit + ' ' + card.number);
 }
 //called when a user presses a particular card
-function dropACard(cards) {
+function dropACard(card) {
     console.log('You just selected ' + card.suit + ' ' + card.number);
 }
 //called whenever a user presses anywhere on screen..
@@ -103,6 +128,9 @@ function handleScreenPress() {
             if (card.shouldPlayCard() === true) {
                 playCard(card);
             }
+        }
+        if (deck.shouldPlayCard()) {
+            pickACardFromTheDeck();
         }
         //increment playerUp
         game.playerUp = game.playerUp < game.getNumberOfPlayers() - 1 ? game.playerUp + 1 : 0;

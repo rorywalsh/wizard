@@ -12,6 +12,7 @@ let firstTimeConnection = true;
 let playerDetails;
 let game;
 let cardsInPlayersHand = [];
+let discardPile = [];
 let deck;
 
 
@@ -23,18 +24,22 @@ function setup() {
 
 function draw() {
     background(255);
-    drawTopOfDeck();
     if (playerDetails && game) {
-        drawName();
-        drawCards();
+        displayName();
+        displayCards();
     }
+
+    if (discardPile) {
+        displayDiscardPile();
+    }
+    //show simple representation of card deck from top
     if (deck) {
         deck.display(windowWidth * 0.06, windowHeight * 0.1, windowWidth * 0.125, windowHeight * 0.35);
     }
 }
 
 //display users name
-function drawName() {
+function displayName() {
     fill(0);
     textSize(40);
     textAlign(LEFT);
@@ -43,7 +48,7 @@ function drawName() {
 }
 
 //displays users cards
-function drawCards() {
+function displayCards() {
     xPos = windowWidth * 0.01;
     for (card of cardsInPlayersHand) {
         card.display(
@@ -55,11 +60,16 @@ function drawCards() {
     }
 }
 
-function drawTopOfDeck(xPos, yPos, w, h) {
-    for (let i = 0; i < w; i += 2) {
-        strokeWeight(2);
-        stroke(0);
-        line(xPos * windowWidth + i, yPos * windowHeight, xPos * windowWidth + i + 10, xPos * windowWidth + h.windowHeight);
+//displays discard pile
+function displayDiscardPile() {
+    xPos = windowWidth * 0.2;
+    for (card of discardPile) {
+        card.display(
+            (xPos += windowWidth * 0.01),
+            windowHeight * 0.1,
+            windowWidth * 0.125,
+            windowHeight * 0.35
+        );
     }
 }
 
@@ -75,6 +85,7 @@ function onReceiveData(incomingGameState) {
 
             let xPos = 0;
             let cardOverlap = windowWidth * .1;
+            cardsInPlayersHand = [];
             for (card of game.getPlayer(id).currentCards) {
                 cardsInPlayersHand.push(new Card(card.suit, card.number, cardOverlap / 2));
                 xPos += cardOverlap;
@@ -82,8 +93,13 @@ function onReceiveData(incomingGameState) {
 
             deck = new Card('Deck', -1, cardOverlap);
 
-
             firstTimeConnection = false;
+        }
+
+        discardPile = [];
+
+        for (card of game.getDiscardPile()) {
+            discardPile.push(new Card(card.suit, card.number, windowWidth * .1));
         }
     }
 }
@@ -93,19 +109,14 @@ function playCard(card) {
     //call some kind of method to determine tif this is a legal card..
     console.log('You just selected ' + card.suit + ' ' + card.number);
     cardsInPlayersHand.splice(cardsInPlayersHand.indexOf(card), 1);
+    game.playerUp = game.playerUp < game.getNumberOfPlayers() - 1 ? game.playerUp + 1 : 0;
+    sendData("gameState", game);
 }
 
 //called when a user picks a card from the deck
 function pickACardFromTheDeck() {
-    //console.log('You just selected ' + card.suit + ' ' + card.number);
-    let deck = game.getDeck();
-    console.log(deck);
-    let cardTurnedOver = random(deck.length);
-    print(cardTurnedOver);
-    console.log(deck[int(cardTurnedOver)]);
-    //console.log("You just turned over " + cardTurnedOver.number + ' ' + cardTurnedOver.suit);
-    //game.cards.splice(game.cards.indexOf(cardTurnedOver));
-
+    game.turnCardFromDeck();
+    sendData("gameState", game);
 }
 
 //called when a user picks a card from the deck
@@ -133,8 +144,7 @@ function handleScreenPress() {
             pickACardFromTheDeck();
         }
         //increment playerUp
-        game.playerUp = game.playerUp < game.getNumberOfPlayers() - 1 ? game.playerUp + 1 : 0;
-        sendData("gameState", game);
+
 
     } else {
         console.log("It's not your turn dopey!");

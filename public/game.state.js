@@ -1,36 +1,30 @@
-//player class 
-class Player {
-    constructor(id, number) {
-        this.id = id;
-        this.number = number;
-        this.handsWon = 0;
-        this.score = 0;
-        this.name = 'Player ' + number;
-        this.currentCards = [];
-    }
-};
-
 //main game state class
 class GameState {
     constructor() {
         this.players = [];
+        this.discardPile = [];
         this.score = 0;
-        this.cards = null;
+        this.deck = null;
         this.dealer = 0;
         this.round = 1;
         this.currentBidder = 0;
         this.numberOfBids = 0;
         this.winnerOfLastHand = -1;
         this.playerUp = 0;
-        this.cardsPlayedInCurrentHand = 0;
+        this.cardsPlayedInCurrentHand = [];
         this.tricksPlayed = 0;
-        this.cardsPlayed = [];
         this.acesHigh = true;
         this.state = '';
     }
 
+    setGameType(type) {
+        this.gameType = type;
+        this.addCards(this.gameType.getCardDeck());
+    }
+
     addCards(cards) {
-        this.cards = cards;
+        this.deck = cards;
+        console.log(this.deck);
     }
 
     getNumberOfPlayers() {
@@ -42,13 +36,13 @@ class GameState {
     }
 
     dealCards(numberOfCards) {
-        if (this.cards.length > numberOfCards) {
+        if (this.deck.length > numberOfCards) {
             for (var player = 0; player < this.players.length; player++) {
                 this.players[player].currentCards = new Array(numberOfCards);
                 for (var i = 0; i < numberOfCards; i++) {
-                    var cardIndex = int(random(0, this.cards.length));
-                    this.players[player].currentCards[i] = (this.cards[cardIndex]);
-                    this.cards.splice(cardIndex, 1);
+                    var cardIndex = int(random(0, this.deck.length));
+                    this.players[player].currentCards[i] = (this.deck[cardIndex]);
+                    this.deck.splice(cardIndex, 1);
                 }
                 console.log(this.players[player].currentCards);
             }
@@ -56,8 +50,19 @@ class GameState {
             console.log("Not enough cards remaining for a deal");
     }
 
+    getDiscardPile() {
+        return this.discardPile;
+    }
+
     getDeck() {
-        return this.cards;
+        return this.deck;
+    }
+
+    turnCardFromDeck() {
+        let cardIndex = int(random(this.deck.length));
+        //console.log(this.deck[cardIndex]);
+        this.discardPile.push(this.deck[cardIndex]);
+        this.deck.splice(cardIndex, 1);
     }
 
     setAcesHigh(acesAreHigh) {

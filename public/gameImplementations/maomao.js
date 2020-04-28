@@ -3,6 +3,6 @@ class MaoMao extends SheddingFamilyCardGame {
         var minNumberPlayers = 2;
         var maxNumberPlayers = 5;
         super(minNumberPlayers, maxNumberPlayers);
-        this.addCardDeck(CardDecks.createDefault32FrenchSuitedPack);
+        this.addCardDeck(CardDecks.createDefault32FrenchSuitedPack());
     }
 }

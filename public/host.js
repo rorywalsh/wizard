@@ -32,8 +32,7 @@ function setup() {
     //create out game object
     game = new GameState();
     //add cards to game 
-    game.setGameType(new CrazyEights());
-
+    game.createNewGame(new Switch());
 }
 
 
@@ -52,7 +51,7 @@ function onClientDisconnect(data) {
 
 function onClientConnect(data) {
     //push each newly logged on player to gameState adding a unique IP and int ID each time
-    game.addPlayer(new CrazyEightsPlayer(data.id, game.getNumberOfPlayers()));
+    game.addPlayer(new SwitchPlayer(data.id, game.getNumberOfPlayers()));
 
     // once all players have logged on, start new round...
     if (game.getNumberOfPlayers() === numberOfPlayers) {

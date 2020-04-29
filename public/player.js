@@ -73,7 +73,7 @@ function displayDiscardPile() {
     }
 }
 
-//called each time host sends a message
+//called each time host sends a message to players
 function onReceiveData(incomingGameState) {
     if (incomingGameState.type == "gameState") {
         //reassign socket data as gameState class object
@@ -82,22 +82,20 @@ function onReceiveData(incomingGameState) {
         //if first time connection  - add player to local playerDetails object and create player's cards
         if (firstTimeConnection) {
             playerDetails = { id: game.getPlayer(id).id, number: game.getPlayer(id).number, name: game.getPlayer(id).name };
-
-            let xPos = 0;
-            let cardOverlap = windowWidth * .1;
-            cardsInPlayersHand = [];
-            for (card of game.getPlayer(id).currentCards) {
-                cardsInPlayersHand.push(new Card(card.suit, card.number, cardOverlap / 2));
-                xPos += cardOverlap;
-            }
-
-            deck = new Card('Deck', -1, cardOverlap);
-
             firstTimeConnection = false;
+            deck = new Card('Deck', -1, windowWidth * .1);
+        }
+
+        //update cards each time the host send some data
+        cardsInPlayersHand = [];
+        let xPos = 0;
+        cardsInPlayersHand = [];
+        for (card of game.getPlayer(id).currentCards) {
+            cardsInPlayersHand.push(new Card(card.suit, card.number, windowWidth * .1 / 2));
+            xPos += windowWidth * .1;
         }
 
         discardPile = [];
-
         for (card of game.getDiscardPile()) {
             discardPile.push(new Card(card.suit, card.number, windowWidth * .1));
         }
@@ -105,17 +103,15 @@ function onReceiveData(incomingGameState) {
 }
 
 //called when a user presses a particular card
-function playCard(card) {
-    //call some kind of method to determine tif this is a legal card..
-    console.log('You just selected ' + card.suit + ' ' + card.number);
-    cardsInPlayersHand.splice(cardsInPlayersHand.indexOf(card), 1);
-    game.playerUp = game.playerUp < game.getNumberOfPlayers() - 1 ? game.playerUp + 1 : 0;
-    sendData("gameState", game);
+function playACard(card) {
+    if (game.playCard(game.getPlayer(id), card) != 'Illegal move')
+        sendData("gameState", game);
 }
 
 //called when a user picks a card from the deck
 function pickACardFromTheDeck() {
-    game.turnCardFromDeck();
+    game.pickCardFromDeck(game.getPlayer(id));
+    //update global game state
     sendData("gameState", game);
 }
 
@@ -137,7 +133,7 @@ function handleScreenPress() {
     if (game.playerUp === playerDetails.number) {
         for (card of cardsInPlayersHand) {
             if (card.shouldPlayCard() === true) {
-                playCard(card);
+                playACard(card);
             }
         }
         if (deck.shouldPlayCard()) {

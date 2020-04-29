@@ -27,19 +27,6 @@ function sendData(datatype, data) {
     socket.emit('sendData', data);
 }
 
-// Displays a message while attempting connection
-function _displayWaiting() {
-    push();
-    fill(200);
-    textAlign(CENTER, CENTER);
-    textSize(20);
-    text("Attempting connection...", width / 2, height / 2 - 10);
-    pop();
-}
-
-////////////
-// HOST
-
 // Initialize Network related variables
 let hostConnected = false;
 
@@ -65,7 +52,6 @@ function setupHost() {
 
 function isHostConnected(display = false) {
     if (!hostConnected) {
-        if (display) { _displayWaiting(); }
         return false;
     }
     return true;
@@ -78,15 +64,6 @@ function onHostConnect(data) {
     if (roomId === null || roomId === 'undefined') {
         roomId = data.roomId;
     }
-}
-
-// Displays server address in lower left of screen
-function displayAddress() {
-    push();
-    fill(255);
-    textSize(50);
-    text(serverIp + "/?=" + roomId, 10, height - 50);
-    pop();
 }
 
 ////////////
@@ -134,16 +111,4 @@ function isClientConnected(display = false) {
     }
 
     return true;
-}
-
-// Displays a message instructing player to look at host screen 
-// for correct link.
-function _displayInstructions() {
-    push();
-    fill(200);
-    textAlign(CENTER, CENTER);
-    textSize(20);
-    text("Please enter the link at the", width / 2, height / 2 - 10);
-    text("bottom of the host screen.", width / 2, height / 2 + 10);
-    pop();
 }

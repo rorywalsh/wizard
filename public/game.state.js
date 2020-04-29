@@ -15,11 +15,15 @@ class GameState {
         this.tricksPlayed = 0;
         this.acesHigh = true;
         this.state = '';
+        this.gameType = null;
     }
 
-    setGameType(type) {
+
+    createNewGame(type) {
         this.gameType = type;
         this.addCards(this.gameType.getCardDeck());
+        //in switch, we turn over one card...
+        this.turnCardFromDeck();
     }
 
     addCards(cards) {
@@ -58,10 +62,35 @@ class GameState {
         return this.deck;
     }
 
+    playCard(player, card) {
+        //can't access this.gameType.validateMove() for some reason??!±?!!? 
+        let returnString = Switch.validateMove(this.discardPile, card);
+        if (returnString != 'Illegal move') {
+            // const cardPlayed = card;
+            console.log(card);
+            this.discardPile.push({ suit: card.suit, number: card.number });
+            player.currentCards.splice(cardsInPlayersHand.indexOf(card), 1);
+            this.playerUp = this.playerUp < this.getNumberOfPlayers() - 1 ? this.playerUp + 1 : 0;
+        }
+
+        return returnString;
+    }
+
     turnCardFromDeck() {
         let cardIndex = int(random(this.deck.length));
         //console.log(this.deck[cardIndex]);
         this.discardPile.push(this.deck[cardIndex]);
+        this.deck.splice(cardIndex, 1);
+        if (Switch.goToNextPlayer("card pick from deck")) {
+            player.currentCards.splice(cardsInPlayersHand.indexOf(card), 1);
+            this.playerUp = this.playerUp < this.getNumberOfPlayers() - 1 ? this.playerUp + 1 : 0;
+        }
+    }
+
+    pickCardFromDeck(player) {
+        //in switch no trick cards can be played in the opening draw...
+        let cardIndex = int(random(this.deck.length));
+        player.currentCards.push(this.deck[cardIndex]);
         this.deck.splice(cardIndex, 1);
     }
 

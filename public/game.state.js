@@ -28,7 +28,6 @@ class GameState {
 
     addCards(cards) {
         this.deck = cards;
-        console.log(this.deck);
     }
 
     getNumberOfPlayers() {
@@ -58,21 +57,24 @@ class GameState {
         return this.discardPile;
     }
 
+    getPlayerUp() {
+        return this.playerUp;
+    }
+
     getDeck() {
         return this.deck;
     }
 
     playCard(player, card) {
         //can't access this.gameType.validateMove() for some reason??!±?!!? 
-        let returnString = Switch.validateMove(this.discardPile, card);
+        let returnString = Switch.validateMove(this.discardPile, card, player.currentCards.length);
         if (returnString != 'Illegal move') {
             // const cardPlayed = card;
-            console.log(card);
             this.discardPile.push({ suit: card.suit, number: card.number });
             player.currentCards.splice(cardsInPlayersHand.indexOf(card), 1);
             this.playerUp = this.playerUp < this.getNumberOfPlayers() - 1 ? this.playerUp + 1 : 0;
         }
-
+        console.log(returnString);
         return returnString;
     }
 
@@ -81,10 +83,6 @@ class GameState {
         //console.log(this.deck[cardIndex]);
         this.discardPile.push(this.deck[cardIndex]);
         this.deck.splice(cardIndex, 1);
-        if (Switch.goToNextPlayer("card pick from deck")) {
-            player.currentCards.splice(cardsInPlayersHand.indexOf(card), 1);
-            this.playerUp = this.playerUp < this.getNumberOfPlayers() - 1 ? this.playerUp + 1 : 0;
-        }
     }
 
     pickCardFromDeck(player) {
@@ -92,6 +90,9 @@ class GameState {
         let cardIndex = int(random(this.deck.length));
         player.currentCards.push(this.deck[cardIndex]);
         this.deck.splice(cardIndex, 1);
+        if (Switch.goToNextPlayer("card pick from deck")) {
+            this.playerUp = this.playerUp < this.getNumberOfPlayers() - 1 ? this.playerUp + 1 : 0;
+        }
     }
 
     setAcesHigh(acesAreHigh) {

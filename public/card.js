@@ -1,9 +1,8 @@
 // Represents a single card
 class Card {
-    constructor(suit, number = -1, spacing = 1) {
+    constructor(suit, number = -1) {
         this.suit = suit;
         this.number = number;
-        this.spacing = spacing;
         this.x = 0;
         this.y = 0;
         this.w = 100;
@@ -30,8 +29,6 @@ class Card {
         } else {
             this.drawCard(x, y, w, h);
         }
-
-
     }
 
     drawTopOfDeck(x, y, w, h) {
@@ -42,23 +39,24 @@ class Card {
         rect(x * 1.1, y * 1.15, w * .9, h * .9, w * .1);
     }
 
-    shouldPlayCard() {
-        return collidePointRect(mouseX, mouseY, this.x, this.y, this.spacing, this.h);
+    shouldPlayCard(spacing = 0.25) {
+        return collidePointRect(mouseX, mouseY, this.x, this.y, this.w * spacing, this.h);
     }
 
     getText(number) {
-            if (this.number == 11)
-                return 'J';
-            else if (this.number == 12)
-                return 'Q';
-            else if (this.number == 13)
-                return 'K';
-            else if (this.number == 14)
-                return 'A';
-            else
-                return this.number;
-        }
-        //edit to change look of cards
+        if (this.number == 11)
+            return 'J';
+        else if (this.number == 12)
+            return 'Q';
+        else if (this.number == 13)
+            return 'K';
+        else if (this.number == 14)
+            return 'A';
+        else
+            return this.number;
+    }
+
+    //edit to change look of cards
     drawCard(x, y, w, h) {
         fill(255);
         textAlign(CENTER, CENTER);

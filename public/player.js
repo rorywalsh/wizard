@@ -22,6 +22,9 @@ function setup() {
     createCanvas(windowWidth, windowHeight);
 }
 
+//==============================================================
+// drawing methods
+//==============================================================
 function draw() {
     background(255);
     if (playerDetails && game) {
@@ -43,7 +46,8 @@ function displayName() {
     fill(0);
     textSize(40);
     textAlign(LEFT);
-    text("Name:" + playerDetails.name + ' Number of cards:' + game.getPlayer(playerDetails.id).currentCards.length,
+    text("Name:" + playerDetails.name + ' Number of cards:' + game.getPlayer(playerDetails.id).currentCards.length +
+        (game.getPlayerUp() === game.getPlayer(playerDetails.id).number ? " You're up" : " It's not your turn..."),
         windowWidth * 0.05, windowHeight - windowHeight * .05);
 }
 
@@ -73,7 +77,7 @@ function displayDiscardPile() {
     }
 }
 
-//called each time host sends a message to players
+//==============================================================
 function onReceiveData(incomingGameState) {
     if (incomingGameState.type == "gameState") {
         //reassign socket data as gameState class object
@@ -83,7 +87,7 @@ function onReceiveData(incomingGameState) {
         if (firstTimeConnection) {
             playerDetails = { id: game.getPlayer(id).id, number: game.getPlayer(id).number, name: game.getPlayer(id).name };
             firstTimeConnection = false;
-            deck = new Card('Deck', -1, windowWidth * .1);
+            deck = new Card('Deck', -1);
         }
 
         //update cards each time the host send some data
@@ -91,13 +95,13 @@ function onReceiveData(incomingGameState) {
         let xPos = 0;
         cardsInPlayersHand = [];
         for (card of game.getPlayer(id).currentCards) {
-            cardsInPlayersHand.push(new Card(card.suit, card.number, windowWidth * .1 / 2));
+            cardsInPlayersHand.push(new Card(card.suit, card.number));
             xPos += windowWidth * .1;
         }
 
         discardPile = [];
         for (card of game.getDiscardPile()) {
-            discardPile.push(new Card(card.suit, card.number, windowWidth * .1));
+            discardPile.push(new Card(card.suit, card.number));
         }
     }
 }
@@ -132,11 +136,12 @@ function handleScreenPress() {
     //first check if this users turn to play card...
     if (game.playerUp === playerDetails.number) {
         for (card of cardsInPlayersHand) {
-            if (card.shouldPlayCard() === true) {
+            const hitTestWidth = cardsInPlayersHand.indexOf(card) == cardsInPlayersHand.length - 1 ? 1 : 0.3;
+            if (card.shouldPlayCard(hitTestWidth) === true) {
                 playACard(card);
             }
         }
-        if (deck.shouldPlayCard()) {
+        if (deck.shouldPlayCard(1)) {
             pickACardFromTheDeck();
         }
         //increment playerUp

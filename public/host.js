@@ -63,7 +63,7 @@ function onClientConnect(data) {
 
 //called to start a new game
 function startGame() {
-    let numberOfCards = 7;
+    let numberOfCards = 10;
     game.dealCards(numberOfCards);
     sendData("gameState", game);
 }
@@ -72,7 +72,7 @@ function startGame() {
 function onReceiveData(data) {
     if (data.type == "gameState") {
         game = Object.assign(new GameState(), data);
-        console.log(game.playerUp);
+        // console.log(game.playerUp);
     }
 
     sendData("gameState", game);

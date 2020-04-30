@@ -16,6 +16,7 @@ class GameState {
         this.acesHigh = true;
         this.state = '';
         this.gameType = null;
+        this.instructions = null;
     }
 
 
@@ -28,6 +29,7 @@ class GameState {
 
     addCards(cards) {
         this.deck = cards;
+
     }
 
     getNumberOfPlayers() {
@@ -65,17 +67,37 @@ class GameState {
         return this.deck;
     }
 
+
     playCard(player, card) {
         //can't access this.gameType.validateMove() for some reason??!±?!!? 
-        let returnString = Switch.validateMove(this.discardPile, card, player.currentCards.length);
-        if (returnString != 'Illegal move') {
-            // const cardPlayed = card;
+        let returnObj = Switch.validateMove(this.discardPile, card, player.currentCards.length);
+        let cardIndex = this.indexOfCardInCurrentCards(player.currentCards, card);
+        if (returnObj.message != 'Illegal move') {
             this.discardPile.push({ suit: card.suit, number: card.number });
-            player.currentCards.splice(cardsInPlayersHand.indexOf(card), 1);
+            player.currentCards.splice(cardIndex, 1);
             this.playerUp = this.playerUp < this.getNumberOfPlayers() - 1 ? this.playerUp + 1 : 0;
+            this.instructions = { player: this.playerUp, instruction: returnObj.instruction };
         }
-        console.log(returnString);
-        return returnString;
+        return returnObj;
+    }
+
+    getInstructionsForPlayer(player) {
+        if (player && this.instructions) {
+            if (this.instructions.player == player.number)
+                return this.instructions.instruction;
+            else return "";
+        }
+
+        return "";
+    }
+
+    //finds index of players card in cards array - type agnostic
+    indexOfCardInCurrentCards(currentCards, card) {
+        for (let index = 0; index < currentCards.length; index++) {
+            if (currentCards[index].suit === card.suit && currentCards[index].number === card.number)
+                return index;
+        }
+        return -1;
     }
 
     turnCardFromDeck() {

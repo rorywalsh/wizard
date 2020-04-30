@@ -37,31 +37,37 @@ class Switch extends SheddingFamilyCardGame {
         const lastCardIndex = discardPile.length - 1;
         if (numberOfCards == 1) {
             if (card.suit != discardPile[lastCardIndex].suit)
-                return "Last card can't be a trick card";
+                return { message: "Last card can't be a trick card" };
         } else {
             if (card.suit === discardPile[lastCardIndex].suit) {
                 if (card.number === 2) {
-                    return 'Player played a 2 - next player picks 2 cards'
+                    return {
+                        message: 'Player played a 2 - next player picks 2 cards',
+                        instruction: "Pick up 2"
+                    };
                 } else if (card.number == 10) {
                     if (card.suit === 'clubs' || card.suit === 'spades') {
                         if (discardPile.length > 1 && discardPile[lastCardIndex - 1].number === 10 &&
                             discardPile[lastCardIndex - 1].suit === 'clubs' || discardPile[lastCardIndex - 1].suit === 'spades')
-                            return "Player played a black jack on a black jack - next player picks up 10"
+                            return { message: "Player played a black jack on a black jack - next player picks up 10" };
                         else
-                            return "Player played a black jack - next player picks up 5"
+                            return { message: "Player played a black jack - next player picks up 5" };
                     } else
-                        return "Player played a red jack - cancels any trick moves against them"
+                        return { message: "Player played a red jack - cancels any trick moves against them" };
                 } else if (card.number === 13) {
-                    return "Player played an King - reverses play"
+                    return { message: "Player played an King - reverses play" };
                 } else {
-                    return "Player has followed suit";
+                    return {
+                        message: "Player has followed suit",
+                        instruction: ""
+                    };
                 }
             } else if (card.number === discardPile[lastCardIndex].number) {
-                return "Player has matched number and switched suit";
+                return { message: "Player has matched number and switched suit" };
             } else if (card.number === 12) {
-                return "Player played an Queen"
+                return { message: "Player played an Queen" };
             } else if (card.number === 14) {
-                return "Player played an ACE - now gets to decide next suit"
+                return { message: "Player played an ACE - now gets to decide next suit" };
             } else if (discardPile[lastCardIndex].number === 2 && card.number === 2) {
                 let numberOfCardsToPickUp = 4;
                 if (discardPile.length > 1 && discardPile[lastCardIndex - 1].number === 2) {
@@ -70,9 +76,9 @@ class Switch extends SheddingFamilyCardGame {
                 if (discardPile.length > 2 && discardPile[lastCardIndex - 1].number === 2 && discardPile[lastCardIndex - 2].number === 2) {
                     numberOfCardsToPickUp = 8;
                 }
-                return "Player has played has played a 2 on some previous 2s - next player picks " + numberOfCardsToPickUp;
+                return { message: "Player has played has played a 2 on some previous 2s - next player picks " + numberOfCardsToPickUp };
 
-            } else return "Illegal move"
+            } else return { message: "Illegal move" };
         }
     }
 }

@@ -192,7 +192,7 @@ class LeaderBoard {
     }
 }
 
-class InfoDisplay {
+class DisplayInfo {
     constructor(text, innerColour, outerColour, textColour) {
         this.text = text;
         this.innerColour = innerColour;
@@ -214,17 +214,5 @@ class InfoDisplay {
 
         if (this.show)
             text(this.text, x, y, w, h);
-        // if (!this.text.includes(' won the hand')) {
-        //     this.maxDots = 24 - this.text.length;
-        //     if (frameCount % 25 == 0) {
-        //         this.numberOfDots = (this.numberOfDots < this.maxDots ? this.numberOfDots + 1 : 0)
-
-        //         if (this.numberOfDots == 0)
-        //             this.text = this.text.substring(0, this.text.indexOf('.'));
-
-        //         this.text += '.';
-        //     }
-        // }
-
     }
 }

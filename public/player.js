@@ -9,45 +9,43 @@ const local = true; // true if running locally, false
 // const local = false; // true if running locally, false
 
 let firstTimeConnection = true;
-let playerDetails;
-let game;
-let cardsInPlayersHand = [];
-let discardPile = [];
-let deck;
+let playerDetails; // hold details about plays such as  unique id, player index, and player name
+let game; // local instance of game state object
+let cardsInPlayersHand = []; // cards in player's hand - objects in this array both abstract and GUI information about card
+let discardPile = []; // cards in discard pile - objects in this array both abstract and GUI information about card
+let deckCard; // a dummy card that represents the top of the deck 
+let playerInstructions = "";
 
-
-
+//==============================================================
+// drawing methods
+//==============================================================
 function setup() {
     game = new GameState();
     createCanvas(windowWidth, windowHeight);
 }
 
-//==============================================================
-// drawing methods
-//==============================================================
 function draw() {
     background(255);
     if (playerDetails && game) {
-        displayName();
+        displayInfo();
         displayCards();
     }
 
     if (discardPile) {
         displayDiscardPile();
     }
-    //show simple representation of card deck from top
-    if (deck) {
-        deck.display(windowWidth * 0.06, windowHeight * 0.1, windowWidth * 0.125, windowHeight * 0.35);
+
+    if (deckCard) {
+        deckCard.display(windowWidth * 0.06, windowHeight * 0.1, windowWidth * 0.125, windowHeight * 0.35);
     }
 }
 
 //display users name
-function displayName() {
+function displayInfo() {
     fill(0);
     textSize(40);
     textAlign(LEFT);
-    text("Name:" + playerDetails.name + ' Number of cards:' + game.getPlayer(playerDetails.id).currentCards.length +
-        (game.getPlayerUp() === game.getPlayer(playerDetails.id).number ? " You're up" : " It's not your turn..."),
+    text("Name:" + playerDetails.name + '-Number of cards:' + game.getPlayer(playerDetails.id).currentCards.length + "  ----------------  " + playerInstructions + '  ----------------  ',
         windowWidth * 0.05, windowHeight - windowHeight * .05);
 }
 
@@ -78,6 +76,8 @@ function displayDiscardPile() {
 }
 
 //==============================================================
+// called whenever the host sends data to players...
+//==============================================================
 function onReceiveData(incomingGameState) {
     if (incomingGameState.type == "gameState") {
         //reassign socket data as gameState class object
@@ -87,15 +87,18 @@ function onReceiveData(incomingGameState) {
         if (firstTimeConnection) {
             playerDetails = { id: game.getPlayer(id).id, number: game.getPlayer(id).number, name: game.getPlayer(id).name };
             firstTimeConnection = false;
-            deck = new Card('Deck', -1);
+            deckCard = new Card('Deck', -1);
         }
 
         //update cards each time the host send some data
-        cardsInPlayersHand = [];
+        //recreating the cardsInPlayersHand[] was getting a little slow
+        //so instead we just modify cardsInPlayersHand[] and make sure it's
+        //up to date. 
         let xPos = 0;
-        cardsInPlayersHand = [];
         for (card of game.getPlayer(id).currentCards) {
-            cardsInPlayersHand.push(new Card(card.suit, card.number));
+            if (game.indexOfCardInCurrentCards(cardsInPlayersHand, card) == -1) {
+                cardsInPlayersHand.push(new Card(card.suit, card.number));
+            }
             xPos += windowWidth * .1;
         }
 
@@ -103,13 +106,25 @@ function onReceiveData(incomingGameState) {
         for (card of game.getDiscardPile()) {
             discardPile.push(new Card(card.suit, card.number));
         }
+
+        playerInstructions = game.getInstructionsForPlayer(game.getPlayer(id));
+        if (playerInstructions == '') {
+            playerInstructions = (game.getPlayerUp() === game.getPlayer(playerDetails.id).number ? " You're up" : " It's not your turn...")
+        }
     }
 }
 
+//==============================================================
+// game events
+//==============================================================
 //called when a user presses a particular card
 function playACard(card) {
-    if (game.playCard(game.getPlayer(id), card) != 'Illegal move')
+    //if move is legal....
+    if (game.playCard(game.getPlayer(id), card).message != 'Illegal move') {
+        //when card is played, remove it from current hand...
+        cardsInPlayersHand.splice(game.indexOfCardInCurrentCards(cardsInPlayersHand, card), 1);
         sendData("gameState", game);
+    }
 }
 
 //called when a user picks a card from the deck
@@ -123,25 +138,19 @@ function pickACardFromTheDeck() {
 function pickACardFromTheHand(card) {
     console.log('You just selected ' + card.suit + ' ' + card.number);
 }
-//called when a user presses a particular card
-function pickUpAllCards(card) {
-    console.log('You just selected ' + card.suit + ' ' + card.number);
-}
-//called when a user presses a particular card
-function dropACard(card) {
-    console.log('You just selected ' + card.suit + ' ' + card.number);
-}
+
 //called whenever a user presses anywhere on screen..
 function handleScreenPress() {
     //first check if this users turn to play card...
     if (game.playerUp === playerDetails.number) {
         for (card of cardsInPlayersHand) {
+            //make sure we use the full width of the top most card when testing hits....
             const hitTestWidth = cardsInPlayersHand.indexOf(card) == cardsInPlayersHand.length - 1 ? 1 : 0.3;
             if (card.shouldPlayCard(hitTestWidth) === true) {
                 playACard(card);
             }
         }
-        if (deck.shouldPlayCard(1)) {
+        if (deckCard.shouldPlayCard(1)) {
             pickACardFromTheDeck();
         }
         //increment playerUp
@@ -152,8 +161,9 @@ function handleScreenPress() {
     }
 }
 
-//=======================================================================================================================
-//handle mouse presses
+//==============================================================
+// wrapper / utility methods...
+//==============================================================
 function mousePressed() {
     handleScreenPress()
 }
@@ -161,8 +171,6 @@ function mousePressed() {
 function touchStarted() {
     handleScreenPress();
 }
-
-
 /// Add these lines below sketch to prevent scrolling on mobile
 function touchMoved() {
     // do some stuff

@@ -33,11 +33,14 @@ class Switch extends SheddingFamilyCardGame {
     }
 
     //method to validate any card dropped to the discard pile
-    static validateMove = function(discardPile, card, numberOfCards) {
+    static validateMove(discardPile, card, numberOfCards, currentPlayer) {
         const lastCardIndex = discardPile.length - 1;
         if (numberOfCards == 1) {
             if (card.suit != discardPile[lastCardIndex].suit)
-                return { message: "Last card can't be a trick card" };
+                return {
+                    message: "Try again: Last card can't be a trick card",
+                    instruction: ""
+                };
         } else {
             if (card.suit === discardPile[lastCardIndex].suit) {
                 if (card.number === 2) {
@@ -49,9 +52,15 @@ class Switch extends SheddingFamilyCardGame {
                     if (card.suit === 'clubs' || card.suit === 'spades') {
                         if (discardPile.length > 1 && discardPile[lastCardIndex - 1].number === 10 &&
                             discardPile[lastCardIndex - 1].suit === 'clubs' || discardPile[lastCardIndex - 1].suit === 'spades')
-                            return { message: "Player played a black jack on a black jack - next player picks up 10" };
+                            return {
+                                message: "Player played a black jack on a black jack - next player picks up 10",
+                                instruction: "Pick up 10"
+                            };
                         else
-                            return { message: "Player played a black jack - next player picks up 5" };
+                            return {
+                                message: "Player played a black jack - next player picks up 5",
+                                instruction: "Pick up 5"
+                            };
                     } else
                         return { message: "Player played a red jack - cancels any trick moves against them" };
                 } else if (card.number === 13) {
@@ -62,12 +71,21 @@ class Switch extends SheddingFamilyCardGame {
                         instruction: ""
                     };
                 }
-            } else if (card.number === discardPile[lastCardIndex].number) {
-                return { message: "Player has matched number and switched suit" };
-            } else if (card.number === 12) {
-                return { message: "Player played an Queen" };
-            } else if (card.number === 14) {
-                return { message: "Player played an ACE - now gets to decide next suit" };
+            } else if (card.number === discardPile[lastCardIndex].number) { //normal play
+                return {
+                    message: "Player has matched number and switched suit",
+                    instruction: ""
+                };
+            } else if (card.number === 12) { //queen
+                return {
+                    message: "Player played an Queen",
+                    instruction: ""
+                };
+            } else if (card.number === 14) { //ace
+                return {
+                    message: "Player played an ACE - now gets to decide next suit",
+                    instruction: "Choose next suit"
+                };
             } else if (discardPile[lastCardIndex].number === 2 && card.number === 2) {
                 let numberOfCardsToPickUp = 4;
                 if (discardPile.length > 1 && discardPile[lastCardIndex - 1].number === 2) {
@@ -76,18 +94,12 @@ class Switch extends SheddingFamilyCardGame {
                 if (discardPile.length > 2 && discardPile[lastCardIndex - 1].number === 2 && discardPile[lastCardIndex - 2].number === 2) {
                     numberOfCardsToPickUp = 8;
                 }
-                return { message: "Player has played has played a 2 on some previous 2s - next player picks " + numberOfCardsToPickUp };
+                return {
+                    message: "Player has played has played a 2 on some previous 2s - next player picks " + numberOfCardsToPickUp,
+                    instruction: "Pick up " + numberOfCardsToPickUp
+                };
 
             } else return { message: "Illegal move" };
         }
-    }
-}
-
-
-class SwitchPlayer extends BaseCardPlayer {
-    constructor(id, number) {
-        super(id, number);
-        this.id = id;
-        this.number = number;
     }
 }

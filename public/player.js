@@ -9,8 +9,7 @@ const local = true; // true if running locally, false
 // const local = false; // true if running locally, false
 
 let firstTimeConnection = true;
-let playerDetails; // hold details about plays such as  unique id, player index, and player name
-let game; // local instance of game state object
+let dealer; // local instance of game state object
 let cardsInPlayersHand = []; // cards in player's hand - objects in this array both abstract and GUI information about card
 let discardPile = []; // cards in discard pile - objects in this array both abstract and GUI information about card
 let deckCard; // a dummy card that represents the top of the deck 
@@ -20,13 +19,13 @@ let playerInstructions = "";
 // drawing methods
 //==============================================================
 function setup() {
-    game = new GameState();
+    dealer = new GameDealer();
     createCanvas(windowWidth, windowHeight);
 }
 
 function draw() {
     background(255);
-    if (playerDetails && game) {
+    if (dealer && dealer.getPlayer(id)) {
         displayInfo();
         displayCards();
     }
@@ -45,7 +44,7 @@ function displayInfo() {
     fill(0);
     textSize(40);
     textAlign(LEFT);
-    text("Name:" + playerDetails.name + '-Number of cards:' + game.getPlayer(playerDetails.id).currentCards.length + "  ----------------  " + playerInstructions + '  ----------------  ',
+    text("Name:" + dealer.getPlayer(id).name + '-Number of cards:' + dealer.getPlayer(id).currentCards.length + "  ----------------  " + playerInstructions + '  ----------------  ',
         windowWidth * 0.05, windowHeight - windowHeight * .05);
 }
 
@@ -78,14 +77,13 @@ function displayDiscardPile() {
 //==============================================================
 // called whenever the host sends data to players...
 //==============================================================
-function onReceiveData(incomingGameState) {
-    if (incomingGameState.type == "gameState") {
+function onReceiveData(incomingState) {
+    if (incomingState.type == "gameState") {
         //reassign socket data as gameState class object
-        game = Object.assign(new GameState(), incomingGameState);
+        dealer = Object.assign(new GameDealer(), incomingState);
 
-        //if first time connection  - add player to local playerDetails object and create player's cards
+        //do anything that needs doing just once here...
         if (firstTimeConnection) {
-            playerDetails = { id: game.getPlayer(id).id, number: game.getPlayer(id).number, name: game.getPlayer(id).name };
             firstTimeConnection = false;
             deckCard = new Card('Deck', -1);
         }
@@ -95,21 +93,21 @@ function onReceiveData(incomingGameState) {
         //so instead we just modify cardsInPlayersHand[] and make sure it's
         //up to date. 
         let xPos = 0;
-        for (card of game.getPlayer(id).currentCards) {
-            if (game.indexOfCardInCurrentCards(cardsInPlayersHand, card) == -1) {
+        for (card of dealer.getPlayer(id).currentCards) {
+            if (dealer.indexOfCardInCurrentCards(cardsInPlayersHand, card) == -1) {
                 cardsInPlayersHand.push(new Card(card.suit, card.number));
             }
             xPos += windowWidth * .1;
         }
 
         discardPile = [];
-        for (card of game.getDiscardPile()) {
+        for (card of dealer.getDiscardPile()) {
             discardPile.push(new Card(card.suit, card.number));
         }
 
-        playerInstructions = game.getInstructionsForPlayer(game.getPlayer(id));
+        playerInstructions = dealer.getInstructionsForPlayer(dealer.getPlayer(id));
         if (playerInstructions == '') {
-            playerInstructions = (game.getPlayerUp() === game.getPlayer(playerDetails.id).number ? " You're up" : " It's not your turn...")
+            playerInstructions = (dealer.getPlayerUp() === dealer.getPlayer(id).number ? " You're up" : " It's not your turn...")
         }
     }
 }
@@ -120,29 +118,24 @@ function onReceiveData(incomingGameState) {
 //called when a user presses a particular card
 function playACard(card) {
     //if move is legal....
-    if (game.playCard(game.getPlayer(id), card).message != 'Illegal move') {
+    if (dealer.playACardForPlayer(dealer.getPlayer(id), card).message != 'Illegal move') {
         //when card is played, remove it from current hand...
-        cardsInPlayersHand.splice(game.indexOfCardInCurrentCards(cardsInPlayersHand, card), 1);
-        sendData("gameState", game);
+        cardsInPlayersHand.splice(dealer.indexOfCardInCurrentCards(cardsInPlayersHand, card), 1);
+        sendData("gameState", dealer);
     }
 }
 
 //called when a user picks a card from the deck
 function pickACardFromTheDeck() {
-    game.pickCardFromDeck(game.getPlayer(id));
+    dealer.dealCardFromDeckForPlayer(dealer.getPlayer(id));
     //update global game state
-    sendData("gameState", game);
-}
-
-//called when a user picks a card from the deck
-function pickACardFromTheHand(card) {
-    console.log('You just selected ' + card.suit + ' ' + card.number);
+    sendData("gameState", dealer);
 }
 
 //called whenever a user presses anywhere on screen..
 function handleScreenPress() {
     //first check if this users turn to play card...
-    if (game.playerUp === playerDetails.number) {
+    if (dealer.playerUp === dealer.getPlayer(id).number) {
         for (card of cardsInPlayersHand) {
             //make sure we use the full width of the top most card when testing hits....
             const hitTestWidth = cardsInPlayersHand.indexOf(card) == cardsInPlayersHand.length - 1 ? 1 : 0.3;

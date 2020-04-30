@@ -18,23 +18,53 @@ const local = true; // true if running locally, false
 // const serverPort = "3000";
 // const local = false; // true if running locally, false
 
-//main game class
-let game;
+//main dealer class
+let dealer;
 //number of players in round
 let numberOfPlayers = 2;
 
-function preload() {
-    setupHost();
 
-}
 
 function setup() {
     //create out game object
-    game = new GameState();
+    dealer = new GameDealer();
     //add cards to game 
-    game.createNewGame(new Switch());
+    dealer.createNewGame(new Switch());
 }
 
+//called to start a new game
+function startGame() {
+    let numberOfCards = 20;
+    dealer.dealCards(numberOfCards);
+    sendData("gameState", dealer);
+}
+
+function onClientConnect(data) {
+    //push each newly logged on player to gameState adding a unique IP and int ID each time
+    dealer.addPlayer(new CardPlayer(data.id, dealer.getNumberOfPlayers()));
+
+    // once all players have logged on, start new round...
+    if (dealer.getNumberOfPlayers() === numberOfPlayers) {
+        setTimeout(function() {
+            startGame();
+        }, 1000)
+    }
+}
+
+//called each time a player sends data - after data is received, pass it out to all players
+function onReceiveData(data) {
+    if (data.type == "gameState") {
+        dealer = Object.assign(new GameDealer(), data);
+        // console.log(dealer.playerUp);
+    }
+    sendData("gameState", dealer);
+}
+
+//======================================================================================
+
+function preload() {
+    setupHost();
+}
 
 function windowResized() {
     resizeCanvas(windowWidth, windowHeight);
@@ -45,35 +75,7 @@ function draw() {
     if (isHostConnected((display = true))) {}
 }
 
+
 function onClientDisconnect(data) {
 
-}
-
-function onClientConnect(data) {
-    //push each newly logged on player to gameState adding a unique IP and int ID each time
-    game.addPlayer(new SwitchPlayer(data.id, game.getNumberOfPlayers()));
-
-    // once all players have logged on, start new round...
-    if (game.getNumberOfPlayers() === numberOfPlayers) {
-        setTimeout(function() {
-            startGame();
-        }, 1000)
-    }
-}
-
-//called to start a new game
-function startGame() {
-    let numberOfCards = 20;
-    game.dealCards(numberOfCards);
-    sendData("gameState", game);
-}
-
-//called each time a player sends data - after data is received, pass it out to all players
-function onReceiveData(data) {
-    if (data.type == "gameState") {
-        game = Object.assign(new GameState(), data);
-        // console.log(game.playerUp);
-    }
-
-    sendData("gameState", game);
 }

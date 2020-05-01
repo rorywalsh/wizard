@@ -1,6 +1,7 @@
 //player class 
-class CardPlayer {
+class Player {
     constructor(id, number) {
+        console.log("Adding new player - ", id, number);
         this.id = id;
         this.name = name;
         this.number = number;

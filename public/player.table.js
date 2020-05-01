@@ -1,4 +1,4 @@
-//Player sketch - one instance per player
+//Simple sketch that represents the view of a card table from the perspective of a single player.
 
 const serverIp = "127.0.0.1";
 const serverPort = "3000";
@@ -9,7 +9,8 @@ const local = true; // true if running locally, false
 // const local = false; // true if running locally, false
 
 let firstTimeConnection = true;
-let dealer; // local instance of game state object
+let dealer; // local instance of dealer object
+let players; // local instance of players object
 let cardsInPlayersHand = []; // cards in player's hand - objects in this array both abstract and GUI information about card
 let discardPile = []; // cards in discard pile - objects in this array both abstract and GUI information about card
 let deckCard; // a dummy card that represents the top of the deck 
@@ -19,13 +20,13 @@ let playerInstructions = "";
 // drawing methods
 //==============================================================
 function setup() {
-    dealer = new GameDealer();
+    //dealer = new Dealer();
     createCanvas(windowWidth, windowHeight);
 }
 
 function draw() {
     background(255);
-    if (dealer && dealer.getPlayer(id)) {
+    if (dealer && players.getPlayer(id)) {
         displayInfo();
         displayCards();
     }
@@ -44,7 +45,7 @@ function displayInfo() {
     fill(0);
     textSize(40);
     textAlign(LEFT);
-    text("Name:" + dealer.getPlayer(id).name + '-Number of cards:' + dealer.getPlayer(id).currentCards.length + "  ----------------  " + playerInstructions + '  ----------------  ',
+    text("Name:" + players.getPlayer(id).name + '-Number of cards:' + players.getPlayer(id).currentCards.length + "  ----------------  " + playerInstructions + '  ----------------  ',
         windowWidth * 0.05, windowHeight - windowHeight * .05);
 }
 
@@ -78,22 +79,23 @@ function displayDiscardPile() {
 // called whenever the host sends data to players...
 //==============================================================
 function onReceiveData(incomingState) {
-    if (incomingState.type == "gameState") {
+    if (incomingState.type == "dealer") {
         //reassign socket data as gameState class object
-        dealer = Object.assign(new GameDealer(), incomingState);
+        dealer = Object.assign(new Dealer(), incomingState);
 
         //do anything that needs doing just once here...
         if (firstTimeConnection) {
             firstTimeConnection = false;
             deckCard = new Card('Deck', -1);
         }
-
+    } else if (incomingState.type == "players") {
         //update cards each time the host send some data
         //recreating the cardsInPlayersHand[] was getting a little slow
         //so instead we just modify cardsInPlayersHand[] and make sure it's
         //up to date. 
         let xPos = 0;
-        for (card of dealer.getPlayer(id).currentCards) {
+        players = Object.assign(new Players(), incomingState);
+        for (card of players.getPlayer(id).currentCards) {
             if (dealer.indexOfCardInCurrentCards(cardsInPlayersHand, card) == -1) {
                 cardsInPlayersHand.push(new Card(card.suit, card.number));
             }
@@ -105,11 +107,12 @@ function onReceiveData(incomingState) {
             discardPile.push(new Card(card.suit, card.number));
         }
 
-        playerInstructions = dealer.getInstructionsForPlayer(dealer.getPlayer(id));
+        playerInstructions = dealer.getInstructionsForPlayer(players.getPlayer(id));
         if (playerInstructions == '') {
-            playerInstructions = (dealer.getPlayerUp() === dealer.getPlayer(id).number ? " You're up" : " It's not your turn...")
+            playerInstructions = (dealer.getPlayerUp() === players.getPlayer(id).number ? " You're up" : " It's not your turn...")
         }
     }
+
 }
 
 //==============================================================
@@ -121,7 +124,7 @@ function playACard(card) {
     if (dealer.playACardForPlayer(dealer.getPlayer(id), card).message != 'Illegal move') {
         //when card is played, remove it from current hand...
         cardsInPlayersHand.splice(dealer.indexOfCardInCurrentCards(cardsInPlayersHand, card), 1);
-        sendData("gameState", dealer);
+        sendData("dealer", dealer);
     }
 }
 
@@ -129,7 +132,7 @@ function playACard(card) {
 function pickACardFromTheDeck() {
     dealer.dealCardFromDeckForPlayer(dealer.getPlayer(id));
     //update global game state
-    sendData("gameState", dealer);
+    sendData("dealer", dealer);
 }
 
 //called whenever a user presses anywhere on screen..
@@ -140,11 +143,11 @@ function handleScreenPress() {
             //make sure we use the full width of the top most card when testing hits....
             const hitTestWidth = cardsInPlayersHand.indexOf(card) == cardsInPlayersHand.length - 1 ? 1 : 0.3;
             if (card.shouldPlayCard(hitTestWidth) === true) {
-                playACard(card);
+                //playACard(card);
             }
         }
         if (deckCard.shouldPlayCard(1)) {
-            pickACardFromTheDeck();
+            //pickACardFromTheDeck();
         }
         //increment playerUp
 

@@ -18,46 +18,54 @@ const local = true; // true if running locally, false
 // const serverPort = "3000";
 // const local = false; // true if running locally, false
 
-//main dealer class
-let dealer;
-//number of players in round
-let numberOfPlayers = 2;
+
+let dealer; // main dealer object
+let players; // main players object, this is NOT and array, it contains the player array
+let numberOfPlayers = 2; // number of players in round
 
 
 
 function setup() {
     //create out game object
-    dealer = new GameDealer();
+    dealer = new Dealer();
+    players = new Players();
     //add cards to game 
-    dealer.createNewGame(new Switch());
+    dealer.setupNewGame(new Switch());
 }
 
-//called to start a new game
-function startGame() {
-    let numberOfCards = 20;
-    dealer.dealCards(numberOfCards);
-    sendData("gameState", dealer);
-}
 
 function onClientConnect(data) {
     //push each newly logged on player to gameState adding a unique IP and int ID each time
-    dealer.addPlayer(new CardPlayer(data.id, dealer.getNumberOfPlayers()));
+    players.addPlayer(new Player(data.id, players.getNumberOfPlayers()));
+    dealer.setNumberOfPlayers(players.getNumberOfPlayers());
 
     // once all players have logged on, start new round...
-    if (dealer.getNumberOfPlayers() === numberOfPlayers) {
+    if (players.getNumberOfPlayers() === numberOfPlayers) {
         setTimeout(function() {
             startGame();
         }, 1000)
     }
 }
 
+//called to start a new game
+function startGame() {
+    let numberOfCards = 20;
+    dealer.dealCardsToPlayers(numberOfCards, players);
+    sendData("dealer", dealer);
+    sendData("players", players);
+}
+
+
 //called each time a player sends data - after data is received, pass it out to all players
 function onReceiveData(data) {
-    if (data.type == "gameState") {
-        dealer = Object.assign(new GameDealer(), data);
-        // console.log(dealer.playerUp);
+    if (data.type == "dealer") {
+        dealer = Object.assign(new Dealer(), data);
+        sendData("dealer", dealer);
+    } else if (data.type == "players") {
+        dealer = Object.assign(new Players(), data);
+        sendData("players", players);
     }
-    sendData("gameState", dealer);
+
 }
 
 //======================================================================================

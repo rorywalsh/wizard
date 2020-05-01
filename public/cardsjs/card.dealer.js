@@ -1,7 +1,8 @@
 //main game state class
-class GameDealer {
+class Dealer {
     constructor() {
-        this.players = [];
+        // this.players = [];
+        this.numberOfPlayers = 0;
         this.discardPile = [];
         this.score = 0;
         this.deck = null;
@@ -20,7 +21,7 @@ class GameDealer {
     }
 
     //create a new game 
-    createNewGame(type) {
+    setupNewGame(type) {
         this.gameType = type;
         this.setDeck(this.gameType.getCardDeck());
         //in switch, we turn over one card...
@@ -35,25 +36,29 @@ class GameDealer {
 
     //dealer returns number of player
     getNumberOfPlayers() {
-        return this.players.length;
+        return this.numberOfPlayers;
+    }
+
+    //dealer returns number of player
+    setNumberOfPlayers(num) {
+        this.numberOfPlayers = num;
     }
 
     //dealer adds player
-    addPlayer(player) {
-        this.players.push(player);
-    }
+    // addPlayer(player) {
+    //     this.players.push(player);
+    // }
 
     //called when dealer deals cards
-    dealCards(numberOfCards) {
+    dealCardsToPlayers(numberOfCards, players) {
         if (this.deck.length > numberOfCards) {
-            for (var player = 0; player < this.players.length; player++) {
-                this.players[player].currentCards = new Array(numberOfCards);
+            for (var index = 0; index < players.getNumberOfPlayers(); index++) {
+                players.getPlayerByIndex(index).currentCards = new Array(numberOfCards);
                 for (var i = 0; i < numberOfCards; i++) {
                     var cardIndex = int(random(0, this.deck.length));
-                    this.players[player].currentCards[i] = (this.deck[cardIndex]);
+                    players.getPlayerByIndex(index).currentCards[i] = (this.deck[cardIndex]);
                     this.deck.splice(cardIndex, 1);
                 }
-                console.log(this.players[player].currentCards);
             }
         } else
             console.log("Not enough cards remaining for a deal");
@@ -111,7 +116,6 @@ class GameDealer {
     //dealer turns a card over
     turnCardFromDeck() {
         let cardIndex = int(random(this.deck.length));
-        //console.log(this.deck[cardIndex]);
         this.discardPile.push(this.deck[cardIndex]);
         this.deck.splice(cardIndex, 1);
     }
@@ -165,14 +169,6 @@ class GameDealer {
 
     setTrump() {
 
-    }
-
-    getPlayer(id) {
-        for (var i = 0; i < this.players.length; i++) {
-            if (this.players[i].id === id) {
-                return this.players[i];
-            }
-        }
     }
 
 }

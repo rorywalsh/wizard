@@ -20,14 +20,15 @@ const local = true; // true if running locally, false
 
 
 let dealer; // main dealer object
-let players; // main players object, this is NOT and array, it contains the player array
+let players; // main players object, this is NOT an array, it contains the player array
 let numberOfPlayers = 2; // number of players in round
 
 
 
 function setup() {
-    //create out game object
+    //create our dealer object
     dealer = new Dealer();
+    //create our players object
     players = new Players();
     //add cards to game 
     dealer.setupNewGame(new Switch());
@@ -37,6 +38,7 @@ function setup() {
 function onClientConnect(data) {
     //push each newly logged on player to gameState adding a unique IP and int ID each time
     players.addPlayer(new Player(data.id, players.getNumberOfPlayers()));
+    //players.players[0].playACard(id, null, dealer);
     dealer.setNumberOfPlayers(players.getNumberOfPlayers());
 
     // once all players have logged on, start new round...
@@ -62,7 +64,7 @@ function onReceiveData(data) {
         dealer = Object.assign(new Dealer(), data);
         sendData("dealer", dealer);
     } else if (data.type == "players") {
-        dealer = Object.assign(new Players(), data);
+        players = Object.assign(new Players(), data);
         sendData("players", players);
     }
 

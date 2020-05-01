@@ -80,7 +80,7 @@ class Dealer {
     }
 
     //called when a player has played a card
-    playACardForPlayer(player, card) {
+    validate(player, card) {
         //can't access this.gameType.validateMove() for some reason??!±?!!? 
         let returnObj = Switch.validateMove(this.discardPile, card, player.currentCards.length);
         let cardIndex = this.indexOfCardInCurrentCards(player.currentCards, card);

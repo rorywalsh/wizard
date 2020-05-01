@@ -21,12 +21,13 @@ let playerInstructions = "";
 //==============================================================
 function setup() {
     //dealer = new Dealer();
+    //players = new Players();
     createCanvas(windowWidth, windowHeight);
 }
 
 function draw() {
     background(255);
-    if (dealer && players.getPlayer(id)) {
+    if (dealer && players) {
         displayInfo();
         displayCards();
     }
@@ -118,15 +119,6 @@ function onReceiveData(incomingState) {
 //==============================================================
 // game events
 //==============================================================
-//called when a user presses a particular card
-function playACard(card) {
-    //if move is legal....
-    if (dealer.playACardForPlayer(dealer.getPlayer(id), card).message != 'Illegal move') {
-        //when card is played, remove it from current hand...
-        cardsInPlayersHand.splice(dealer.indexOfCardInCurrentCards(cardsInPlayersHand, card), 1);
-        sendData("dealer", dealer);
-    }
-}
 
 //called when a user picks a card from the deck
 function pickACardFromTheDeck() {
@@ -138,12 +130,13 @@ function pickACardFromTheDeck() {
 //called whenever a user presses anywhere on screen..
 function handleScreenPress() {
     //first check if this users turn to play card...
-    if (dealer.playerUp === dealer.getPlayer(id).number) {
+    if (dealer.playerUp === players.getPlayer(id).number) {
         for (card of cardsInPlayersHand) {
             //make sure we use the full width of the top most card when testing hits....
             const hitTestWidth = cardsInPlayersHand.indexOf(card) == cardsInPlayersHand.length - 1 ? 1 : 0.3;
             if (card.shouldPlayCard(hitTestWidth) === true) {
-                //playACard(card);
+                if (players.playACardForPlayer(id, card, dealer))
+                    cardsInPlayersHand.splice(dealer.indexOfCardInCurrentCards(cardsInPlayersHand, card), 1);
             }
         }
         if (deckCard.shouldPlayCard(1)) {

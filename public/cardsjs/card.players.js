@@ -28,4 +28,8 @@ class Players {
     getNumberOfPlayers() {
         return this.players.length;
     }
+
+    playACardForPlayer(id, card, dealer) {
+        this.getPlayer(id).playACard(card, dealer);
+    }
 }

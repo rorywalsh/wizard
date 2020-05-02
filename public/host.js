@@ -39,8 +39,9 @@ function onClientConnect(data) {
     //push each newly logged on player to gameState adding a unique IP and int ID each time
     players.addPlayer(new Player(data.id, players.getNumberOfPlayers()));
     //players.players[0].playACard(id, null, dealer);
+    console.log(players);
     dealer.setNumberOfPlayers(players.getNumberOfPlayers());
-
+    console.log(players);
     // once all players have logged on, start new round...
     if (players.getNumberOfPlayers() === numberOfPlayers) {
         setTimeout(function() {

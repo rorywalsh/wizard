@@ -80,15 +80,22 @@ function displayDiscardPile() {
 // called whenever the host sends data to players...
 //==============================================================
 function onReceiveData(incomingState) {
+
     if (incomingState.type == "dealer") {
         //reassign socket data as gameState class object
         dealer = Object.assign(new Dealer(), incomingState);
-
+        console.log(dealer);
         //do anything that needs doing just once here...
         if (firstTimeConnection) {
             firstTimeConnection = false;
             deckCard = new Card('Deck', -1);
         }
+
+        if (players) {
+            playerInstructions = dealer.getInstructionsForPlayer(players.getPlayer(id));
+            console.log(playerInstructions);
+        }
+
     } else if (incomingState.type == "players") {
         //update cards each time the host send some data
         //recreating the cardsInPlayersHand[] was getting a little slow
@@ -96,6 +103,11 @@ function onReceiveData(incomingState) {
         //up to date. 
         let xPos = 0;
         players = Object.assign(new Players(), incomingState);
+        for (var i = 0; i < players.getNumberOfPlayers(); i++) {
+            players.activePlayers[i] = Object.assign(new Player(), incomingState.activePlayers[i]);
+        }
+
+        //players.players[0].playACard(id, null, dealer);
         for (card of players.getPlayer(id).currentCards) {
             if (dealer.indexOfCardInCurrentCards(cardsInPlayersHand, card) == -1) {
                 cardsInPlayersHand.push(new Card(card.suit, card.number));
@@ -107,11 +119,8 @@ function onReceiveData(incomingState) {
         for (card of dealer.getDiscardPile()) {
             discardPile.push(new Card(card.suit, card.number));
         }
+        //playerInstructions = (dealer.getPlayerUp() === players.getPlayer(id).number ? playerInstructions : " It's not your turn...")
 
-        playerInstructions = dealer.getInstructionsForPlayer(players.getPlayer(id));
-        if (playerInstructions == '') {
-            playerInstructions = (dealer.getPlayerUp() === players.getPlayer(id).number ? " You're up" : " It's not your turn...")
-        }
     }
 
 }
@@ -135,8 +144,15 @@ function handleScreenPress() {
             //make sure we use the full width of the top most card when testing hits....
             const hitTestWidth = cardsInPlayersHand.indexOf(card) == cardsInPlayersHand.length - 1 ? 1 : 0.3;
             if (card.shouldPlayCard(hitTestWidth) === true) {
-                if (players.playACardForPlayer(id, card, dealer))
+                let isMoveValid = players.playACardForPlayer(id, card, dealer);
+                if (isMoveValid && isMoveValid.instructions != '') {
+                    console.log(isMoveValid.instructions);
+                    //add card to discard pile
+                    discardPile.push(new Card(card.suit, card.number));
+                    //remove card from current cards array
                     cardsInPlayersHand.splice(dealer.indexOfCardInCurrentCards(cardsInPlayersHand, card), 1);
+                }
+
             }
         }
         if (deckCard.shouldPlayCard(1)) {

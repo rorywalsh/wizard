@@ -15,10 +15,10 @@ class Player {
     playACard(card, dealer) {
         console.log("playing a card");
         //if move is legal....
-        if (dealer.validateMove(dealer.getPlayer(id), card).message != 'Illegal move') {
+        if (dealer.validate(this, card).message != 'Illegal move') {
             sendData("dealer", dealer);
-            return true;
+            return dealer.validate(this, card).instruction;
         }
-        return false;
+        return "";
     }
 };

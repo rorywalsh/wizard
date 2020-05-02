@@ -39,7 +39,7 @@ class Switch extends SheddingFamilyCardGame {
             if (card.suit != discardPile[lastCardIndex].suit)
                 return {
                     message: "Try again: Last card can't be a trick card",
-                    instruction: ""
+                    instruction: "Play a card"
                 };
         } else {
             if (card.suit === discardPile[lastCardIndex].suit) {
@@ -68,18 +68,18 @@ class Switch extends SheddingFamilyCardGame {
                 } else {
                     return {
                         message: "Player has followed suit",
-                        instruction: ""
+                        instruction: "Play a card"
                     };
                 }
             } else if (card.number === discardPile[lastCardIndex].number) { //normal play
                 return {
                     message: "Player has matched number and switched suit",
-                    instruction: ""
+                    instruction: "Play a card"
                 };
             } else if (card.number === 12) { //queen
                 return {
                     message: "Player played an Queen",
-                    instruction: ""
+                    instruction: "Play a card"
                 };
             } else if (card.number === 14) { //ace
                 return {

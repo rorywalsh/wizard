@@ -1,35 +1,35 @@
 class Players {
     constructor() {
-        this.players = [];
+        this.activePlayers = [];
     }
 
     addPlayer(player) {
-        this.players.push(player);
+        this.activePlayers.push(player);
     }
 
     getPlayer(id) {
-        for (var i = 0; i < this.players.length; i++) {
-            if (this.players[i].id === id) {
-                return this.players[i];
+        for (var i = 0; i < this.activePlayers.length; i++) {
+            if (this.activePlayers[i].id === id) {
+                return this.activePlayers[i];
             }
         }
         console.error("Player id not found");
     }
 
     getPlayerByIndex(index) {
-        for (var i = 0; i < this.players.length; i++) {
-            if (this.players[i].number === index) {
-                return this.players[i];
+        for (var i = 0; i < this.activePlayers.length; i++) {
+            if (this.activePlayers[i].number === index) {
+                return this.activePlayers[i];
             }
         }
         console.error("Player index not found");
     }
 
     getNumberOfPlayers() {
-        return this.players.length;
+        return this.activePlayers.length;
     }
 
     playACardForPlayer(id, card, dealer) {
-        this.getPlayer(id).playACard(card, dealer);
+        return this.getPlayer(id).playACard(card, dealer);
     }
 }

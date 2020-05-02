@@ -81,8 +81,10 @@ class Dealer {
 
     //called when a player has played a card
     validate(player, card) {
+        // let player = Object.assign(new Player(), activePlayer);
         //can't access this.gameType.validateMove() for some reason??!±?!!? 
         let returnObj = Switch.validateMove(this.discardPile, card, player.currentCards.length);
+        console.log(returnObj);
         let cardIndex = this.indexOfCardInCurrentCards(player.currentCards, card);
         if (returnObj.message != 'Illegal move') {
             this.discardPile.push({ suit: card.suit, number: card.number });
@@ -98,9 +100,8 @@ class Dealer {
         if (player && this.instructions) {
             if (this.instructions.player == player.number)
                 return this.instructions.instruction;
-            else return "";
+            else return "It's not your turn";
         }
-
         return "";
     }
 

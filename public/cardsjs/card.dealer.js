@@ -90,7 +90,7 @@ class Dealer {
             this.discardPile.push({ suit: card.suit, number: card.number });
             player.currentCards.splice(cardIndex, 1);
             this.playerUp = this.playerUp < this.getNumberOfPlayers() - 1 ? this.playerUp + 1 : 0;
-            this.instructions = { player: this.playerUp, instruction: returnObj.instruction };
+            this.instructions = { player: this.playerUp, instruction: returnObj.instructions };
         }
         return returnObj;
     }
@@ -127,6 +127,12 @@ class Dealer {
         let cardIndex = int(random(this.deck.length));
         player.currentCards.push(this.deck[cardIndex]);
         this.deck.splice(cardIndex, 1);
+        if (player.instructions) {
+            console.log("Before", player.instructions);
+            const index = player.instructions.indexOf('Pick up a card');
+            player.instructions.splice(index, 1);
+            console.log("After", player.instructions);
+        }
         if (Switch.goToNextPlayer("card pick from deck")) {
             this.playerUp = this.playerUp < this.getNumberOfPlayers() - 1 ? this.playerUp + 1 : 0;
         }

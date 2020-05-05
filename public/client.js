@@ -92,8 +92,13 @@ function onReceiveData(incomingState) {
         }
 
         if (players) {
-            playerInstructions = dealer.getInstructionsForPlayer(players.getPlayer(id));
-            console.log(playerInstructions);
+            players.getPlayer(id).instructions = dealer.getInstructionsForPlayer(players.getPlayer(id));
+            console.log(dealer.getInstructionsForPlayer(players.getPlayer(id)));
+        }
+
+        discardPile = [];
+        for (card of dealer.getDiscardPile()) {
+            discardPile.push(new Card(card.suit, card.number));
         }
 
     } else if (incomingState.type == "players") {
@@ -115,10 +120,7 @@ function onReceiveData(incomingState) {
             xPos += windowWidth * .1;
         }
 
-        discardPile = [];
-        for (card of dealer.getDiscardPile()) {
-            discardPile.push(new Card(card.suit, card.number));
-        }
+
         //playerInstructions = (dealer.getPlayerUp() === players.getPlayer(id).number ? playerInstructions : " It's not your turn...")
 
     }
@@ -128,35 +130,30 @@ function onReceiveData(incomingState) {
 //==============================================================
 // game events
 //==============================================================
-
-//called when a user picks a card from the deck
-function pickACardFromTheDeck() {
-    dealer.dealCardFromDeckForPlayer(dealer.getPlayer(id));
-    //update global game state
-    sendData("dealer", dealer);
-}
-
 //called whenever a user presses anywhere on screen..
 function handleScreenPress() {
     //first check if this users turn to play card...
     if (dealer.playerUp === players.getPlayer(id).number) {
+
+        //iterate through current cards and test the one the player selected
         for (card of cardsInPlayersHand) {
             //make sure we use the full width of the top most card when testing hits....
             const hitTestWidth = cardsInPlayersHand.indexOf(card) == cardsInPlayersHand.length - 1 ? 1 : 0.3;
             if (card.shouldPlayCard(hitTestWidth) === true) {
                 let isMoveValid = players.playACardForPlayer(id, card, dealer);
-                if (isMoveValid && isMoveValid.instructions != '') {
-                    console.log(isMoveValid.instructions);
+                if (isMoveValid) {
                     //add card to discard pile
                     discardPile.push(new Card(card.suit, card.number));
                     //remove card from current cards array
                     cardsInPlayersHand.splice(dealer.indexOfCardInCurrentCards(cardsInPlayersHand, card), 1);
                 }
-
             }
         }
+        //if the player has pressed the deck, deal a card
         if (deckCard.shouldPlayCard(1)) {
-            //pickACardFromTheDeck();
+            dealer.dealCardFromDeckForPlayer(players.getPlayer(id));
+            sendData("dealer", dealer);
+            sendData("players", players);
         }
         //increment playerUp
 

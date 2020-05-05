@@ -52,7 +52,7 @@ function onClientConnect(data) {
 
 //called to start a new game
 function startGame() {
-    let numberOfCards = 20;
+    let numberOfCards = 10;
     dealer.dealCardsToPlayers(numberOfCards, players);
     sendData("dealer", dealer);
     sendData("players", players);

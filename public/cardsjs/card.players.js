@@ -32,4 +32,9 @@ class Players {
     playACardForPlayer(id, card, dealer) {
         return this.getPlayer(id).playACard(card, dealer);
     }
+
+    getInstructionsForPlayer(id) {
+        return this.getPlayer(id).instructions;
+    }
+
 }
